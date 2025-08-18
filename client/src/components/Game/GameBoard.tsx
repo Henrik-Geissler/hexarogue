@@ -3,6 +3,7 @@ import { BoardPosition, Tile as TileType } from '../../types/game';
 import { HexSpot } from './HexSpot';
 import { getHexPosition } from '../../utils/hexLayout';
 import { canPlaceTile } from '../../utils/gameLogic';
+import { RelictManager } from '../../utils/relictManager';
 
 interface GameBoardProps {
   board: (TileType | null)[][];
@@ -10,6 +11,7 @@ interface GameBoardProps {
   hoveredPosition: BoardPosition | null;
   onPlaceTile: (tile: TileType, position: BoardPosition) => boolean;
   onHoverPosition: (position: BoardPosition | null) => void;
+  ownedRelicts: any[];
 }
 
 export function GameBoard({ 
@@ -17,7 +19,8 @@ export function GameBoard({
   draggedTile, 
   hoveredPosition,
   onPlaceTile,
-  onHoverPosition
+  onHoverPosition,
+  ownedRelicts
 }: GameBoardProps) {
   const isFirstTile = board.every(row => row.every(cell => cell === null));
 
@@ -67,8 +70,11 @@ export function GameBoard({
           row.map((tile, colIndex) => {
             const position: BoardPosition = { row: rowIndex, col: colIndex };
             const { x, y } = getHexPosition(rowIndex, colIndex);
+            
+            // Create relict manager for this check
+            const relictManager = new RelictManager(ownedRelicts);
             const canAccept = draggedTile ? 
-              canPlaceTile(draggedTile, position, board, isFirstTile) : false;
+              canPlaceTile(draggedTile, position, board, isFirstTile, relictManager) : false;
             const isHovered = hoveredPosition?.row === rowIndex && 
                              hoveredPosition?.col === colIndex;
 

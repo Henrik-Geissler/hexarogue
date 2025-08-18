@@ -1,4 +1,5 @@
 import { Tile, TileColor, BoardPosition, GameState } from '../types/game';
+import { RelictManager } from './relictManager';
 
 // Create initial deck of 36 tiles (1-9 in 4 colors)
 export function createInitialDeck(): Tile[] {
@@ -36,8 +37,42 @@ export function numbersShareDigit(num1: number, num2: number): boolean {
   return digits1.some(digit => digits2.includes(digit));
 }
 
-// Check if a tile can be placed at a specific position
-export function canPlaceTile(
+// Get neighbors for a position
+export function getNeighbors(position: BoardPosition, board: (Tile | null)[][]): (Tile | null)[] {
+  const { row, col } = position;
+  const neighbors: (Tile | null)[] = [];
+  
+  // Standard hexagon neighbors for flat-top orientation
+  const isEvenRow = row % 2 === 0;
+  
+  const neighborOffsets = isEvenRow 
+    ? [
+        [0, -1], [0, 1],     // left, right
+        [-1, -1], [-1, 0],   // upper-left, upper-right
+        [1, -1], [1, 0]      // lower-left, lower-right
+      ]
+    : [
+        [0, -1], [0, 1],     // left, right  
+        [-1, 0], [-1, 1],    // upper-left, upper-right
+        [1, 0], [1, 1]       // lower-left, lower-right
+      ];
+  
+  for (const [rowOffset, colOffset] of neighborOffsets) {
+    const neighborRow = row + rowOffset;
+    const neighborCol = col + colOffset;
+    
+    // Check if neighbor is within board bounds
+    if (neighborRow >= 0 && neighborRow < board.length &&
+        neighborCol >= 0 && neighborCol < board[neighborRow].length) {
+      neighbors.push(board[neighborRow][neighborCol]);
+    }
+  }
+  
+  return neighbors;
+}
+
+// Check if a tile can be placed at a specific position (basic logic only)
+export function canPlaceTileBasic(
   tile: Tile,
   position: BoardPosition,
   board: (Tile | null)[][],
@@ -73,49 +108,31 @@ export function canPlaceTile(
   });
 }
 
-// Simple hexagon neighbor detection for honeycomb board
-export function getNeighbors(position: BoardPosition, board: (Tile | null)[][]): (Tile | null)[] {
-  const { row, col } = position;
-  const neighbors: (Tile | null)[] = [];
-  
-  // Standard hexagon neighbors for flat-top orientation
-  // Even rows and odd rows have different neighbor patterns
-  const isEvenRow = row % 2 === 0;
-  
-  const neighborOffsets = isEvenRow 
-    ? [
-        [0, -1], [0, 1],     // left, right
-        [-1, -1], [-1, 0],   // upper-left, upper-right
-        [1, -1], [1, 0]      // lower-left, lower-right
-      ]
-    : [
-        [0, -1], [0, 1],     // left, right  
-        [-1, 0], [-1, 1],    // upper-left, upper-right
-        [1, 0], [1, 1]       // lower-left, lower-right
-      ];
-  
-  for (const [rowOffset, colOffset] of neighborOffsets) {
-    const neighborRow = row + rowOffset;
-    const neighborCol = col + colOffset;
-    
-    // Check if neighbor is within board bounds
-    if (neighborRow >= 0 && neighborRow < board.length &&
-        neighborCol >= 0 && neighborCol < board[neighborRow].length) {
-      neighbors.push(board[neighborRow][neighborCol]);
-    }
+// Check if a tile can be placed (with relict manager)
+export function canPlaceTile(
+  tile: Tile,
+  position: BoardPosition,
+  board: (Tile | null)[][],
+  isFirstTile: boolean,
+  relictManager: RelictManager
+): boolean {
+  // If any relict explicitly allows placement, allow it
+  if (relictManager.canPlaceTile(tile, position, board, isFirstTile)) {
+    return true;
   }
-  
-  return neighbors;
+
+  // Otherwise, fall back to basic placement rules
+  return canPlaceTileBasic(tile, position, board, isFirstTile);
 }
 
 // Check if there are any playable cards in hand
-export function hasPlayableCards(hand: Tile[], board: (Tile | null)[][]): boolean {
+export function hasPlayableCards(hand: Tile[], board: (Tile | null)[][], relictManager: RelictManager): boolean {
   const isFirstTile = board.every(row => row.every(cell => cell === null));
   
   return hand.some(tile => {
     for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[row].length; col++) {
-        if (canPlaceTile(tile, { row, col }, board, isFirstTile)) {
+        if (canPlaceTile(tile, { row, col }, board, isFirstTile, relictManager)) {
           return true;
         }
       }
@@ -144,7 +161,6 @@ export function calculateBoardScore(board: (Tile | null)[][], ownedRelicts: any[
 
 // Initialize a new round  
 export function initializeNewRound(currentRound: number, allTiles: Tile[]): Partial<GameState> {
-  // No automatic tile upgrades anymore - relicts handle upgrades
   const shuffledDeck = shuffleDeck(allTiles);
   const playerHand = shuffledDeck.splice(0, 7);
   
@@ -155,15 +171,14 @@ export function initializeNewRound(currentRound: number, allTiles: Tile[]): Part
     discardPile: [],
     discards: 4,
     score: 0,
-    targetScore: 30 + currentRound * (currentRound+5) , // Double each round starting from 10
+    targetScore: 30 + currentRound * (currentRound+5),
     gamePhase: 'playing'
   };
 }
 
-// Create empty hexagonal board in proper honeycomb pattern (like Settlers of Catan)
+// Create empty hexagonal board in proper honeycomb pattern
 export function createEmptyBoard(): (Tile | null)[][] {
   const board: (Tile | null)[][] = [];
-  // Classic hex board: 3-4-5-4-3 pattern (19 hexes total)
   const rowSizes = [6, 5, 6, 5, 6];
   
   for (let i = 0; i < rowSizes.length; i++) {

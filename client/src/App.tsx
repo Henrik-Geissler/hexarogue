@@ -54,6 +54,7 @@ function App() {
                 hoveredPosition={gameState.hoveredPosition}
                 onPlaceTile={actions.placeTile}
                 onHoverPosition={actions.setHoveredPosition}
+                ownedRelicts={gameState.ownedRelicts}
               />
             </div>
 
@@ -164,6 +165,7 @@ function App() {
             hoveredPosition={gameState.hoveredPosition}
             onPlaceTile={actions.placeTile}
             onHoverPosition={actions.setHoveredPosition}
+            ownedRelicts={gameState.ownedRelicts}
           />
         </div>
 
