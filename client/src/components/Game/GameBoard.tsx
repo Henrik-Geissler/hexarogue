@@ -92,8 +92,8 @@ export function GameBoard({
                 key={`${rowIndex}-${colIndex}`}
                 className="absolute"
                 style={{
-                  left: `${x + 60}px`,
-                  top: `${y + 60}px`,
+                  left: `${x + 50}px`,
+                  top: `${y + 50}px`,
                   transform: 'translate(-50%, -50%)'
                 }}
               >

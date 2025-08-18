@@ -1,6 +1,5 @@
 import { Tile, TileColor, BoardPosition, GameState } from '../types/game';
 import { RelictManager } from './relictManager';
-import { TilePlacementContext } from '../types/relicts';
 import { mixColors } from './colorMixing';
 
 // Create initial deck of 36 tiles (1-9 in 4 colors)

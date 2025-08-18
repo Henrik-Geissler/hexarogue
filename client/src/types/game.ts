@@ -1,5 +1,3 @@
-import { AnimationState } from './animations';
-
 export type TileColor = 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'lime' | 'cyan' | 'purple' | 'brown' | 'white';
 
 export interface Tile {
