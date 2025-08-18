@@ -147,6 +147,7 @@ export function useGameState() {
 
 			// Count doubling effects for cumulative scoring
 			let doublingCount = 0;
+			let scoringCount = 1; // Start with 1 (normal scoring)
 			let ghostPositions: BoardPosition[] = [];
 
 			// Add Color Variety doubling effect if applicable (only if player owns the relict)
@@ -165,6 +166,13 @@ export function useGameState() {
 							addAnimation('doubling', position, 800);
 							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
 							doublingCount++;
+							break;
+						case 'scoring-twice':
+							addAnimation('scoring-twice', position, 800);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
+							// Multiply the scoring count by the multiplier (default 2 for scoring twice)
+							const multiplier = effect.multiplier || 2;
+							scoringCount *= multiplier;
 							break;
 						case 'multiplying':
 							addAnimation('multiplying', position, 800, undefined, undefined, effect.multiplier);
@@ -205,10 +213,17 @@ export function useGameState() {
 				});
 			}
 
-			// Calculate cumulative scoring based on doubling count
+			// Calculate base score for the tile
 			const scoreValue = relictManager.calculateTileScore(processedTile, position, newBoard);
-			const totalScoreValue = scoreValue * Math.pow(2, doublingCount);
-			addAnimation('score-popup', position, 1000, undefined, totalScoreValue);
+			const totalScoreValue = scoreValue * Math.pow(2, doublingCount) * scoringCount;
+			
+			// Show scoring animation for each scoring event
+			for (let i = 0; i < scoringCount; i++) {
+				const delay = i * 200; // Stagger the scoring animations
+				setTimeout(() => {
+					addAnimation('score-popup', position, 1000, undefined, scoreValue * Math.pow(2, doublingCount));
+				}, delay);
+			}
 			
 			let newHand = prev.playerHand.filter(handTile => handTile.id !== tile.id);
 			let newDeck = prev.deck;
@@ -218,13 +233,13 @@ export function useGameState() {
 			
 			// Calculate new score after placement (with retriggering)
 			let newScore = prev.score;
-			// Add the score for the newly placed tile (with retriggering)
+			// Add the score for the newly placed tile (with retriggering and scoring count)
 			for (let i = 0; i < retriggerCount; i++) {
-				newScore += relictManager.calculateTileScore(processedTile, position, newBoard);
+				newScore += relictManager.calculateTileScore(processedTile, position, newBoard) * scoringCount;
 			}
 			
 			// Add cumulative doubling to the score
-			newScore += totalScoreValue - scoreValue;
+			newScore += totalScoreValue - (scoreValue * scoringCount);
 			
 			// Spawn ghost tiles if needed
 			if (ghostPositions.length > 0) {

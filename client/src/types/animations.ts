@@ -7,7 +7,8 @@ export type AnimationType =
   | 'vanishing'
   | 'upgrading'
   | 'multiplying'
-  | 'ghost-spawn';
+  | 'ghost-spawn'
+  | 'scoring-twice';
 
 export interface AnimationState {
   id: string;

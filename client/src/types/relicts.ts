@@ -87,7 +87,7 @@ export interface RoundEndResult {
   vanishedTiles?: Tile[];
 }
 
-export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn';
+export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice';
 
 export interface RelictEffect {
   type: RelictEffectType;

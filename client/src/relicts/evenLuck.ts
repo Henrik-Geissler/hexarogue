@@ -5,7 +5,7 @@ export const evenLuckBehavior: RelictBehavior = {
     const effects = [];
     if (context.tile.number % 2 === 0) {
       effects.push({
-        type: 'doubling' as RelictEffectType,
+        type: 'scoring-twice' as RelictEffectType,
         relictId: 'even-numbers-double'
       });
     }

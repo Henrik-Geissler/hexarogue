@@ -11,7 +11,7 @@ export const emptyNeighborsBehavior: RelictBehavior = {
       const emptyCount = countEmptyNeighbors(context.position, context.board);
       if (emptyCount > 0) {
         effects.push({
-          type: 'doubling' as RelictEffectType,
+          type: 'scoring-twice' as RelictEffectType,
           relictId: 'empty-neighbors-retrigger',
           multiplier: emptyCount // This will trigger scoring emptyCount times
         });

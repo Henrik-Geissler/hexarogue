@@ -109,6 +109,14 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
           setEffectText('');
         }, 800);
         break;
+
+      case 'scoring-twice':
+        setEffectText('⚡');
+        setEffectColor('text-blue-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
     }
   }, [positionAnimations, tile.number]);
 
