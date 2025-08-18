@@ -10,7 +10,7 @@ export type RelictType =
   | 'edge-color-change'
   | 'blue-neighbor-retrigger';
 
-import type { Tile, BoardPosition } from './game';
+import type { Tile, BoardPosition, TileColor } from './game';
 
 export interface GameContext {
   board: (Tile | null)[][];
@@ -76,6 +76,9 @@ export interface RelictBehavior {
   onScoringGold?: (score: number, gold: number) => number; // Return modified score based on gold
   onLowGoldUpgrade?: (tile: Tile, gold: number) => Tile; // Upgrade tile if gold is low
   onSellRelict?: (hand: Tile[]) => Tile[]; // Upgrade hand when another relict is sold
+  
+  // New method for when a tile's color changes
+  onTileColorChanged?: (tile: Tile, oldColor: TileColor, newColor: TileColor) => Tile; // Upgrade tile when color changes
 }
 
 export interface Relict {
@@ -106,7 +109,7 @@ export interface RoundEndResult {
   vanishedTiles?: Tile[];
 }
 
-export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice' | 'discard-upgrade' | 'tile-copy' | 'number-prefix' | 'board-increment' | 'tile-stack' | 'auto-discard' | 'upgrade-field-spawn' | 'area-color-change' | 'area-upgrade' | 'digit-replace' | 'blue-trigger' | 'green-upgrade' | 'consume';
+export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice' | 'discard-upgrade' | 'tile-copy' | 'number-prefix' | 'board-increment' | 'tile-stack' | 'auto-discard' | 'upgrade-field-spawn' | 'area-color-change' | 'area-upgrade' | 'digit-replace' | 'blue-trigger' | 'green-upgrade' | 'consume' | 'color-change-upgrade';
 
 export interface RelictEffect {
   type: RelictEffectType;

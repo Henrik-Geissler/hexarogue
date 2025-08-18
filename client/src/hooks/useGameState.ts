@@ -402,6 +402,18 @@ export function useGameState() {
 				addAnimation('upgrading', position, 600);
 				triggerRelictAnimation('upgrade-field-spawn', 600);
 			}
+
+			// Process color changes through relict effects
+			const originalColor = tile.color;
+			const newColor = processedTile.mixedColor || processedTile.color;
+			if (originalColor !== newColor) {
+				const upgradedTile = relictManager.processTileColorChanged(processedTile, originalColor, newColor);
+				if (upgradedTile.number !== processedTile.number) {
+					processedTile = upgradedTile;
+					addAnimation('color-change-upgrade', position, 600);
+					triggerRelictAnimation('color-change-upgrade', 600);
+				}
+			}
 			
 			// Detect and process areas
 			const colorArea = findArea(position, boardAfterIncrement, 'color', processedTile);

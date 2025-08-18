@@ -449,4 +449,17 @@ export class RelictManager {
 
     return processedHand;
   }
+
+  // Process tile color changes
+  processTileColorChanged(tile: Tile, oldColor: string, newColor: string): Tile {
+    let processedTile = { ...tile };
+
+      // Only upgrade if the color actually changed and is different
+      if (oldColor !== newColor) 
+    for (const relict of this.ownedRelicts)  
+      if (relict.behavior.onTileColorChanged)  
+        processedTile = relict.behavior.onTileColorChanged(processedTile, oldColor as any, newColor as any); 
+
+    return processedTile;
+  }
 }

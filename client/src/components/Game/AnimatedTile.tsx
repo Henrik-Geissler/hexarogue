@@ -282,6 +282,13 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
           setEffectText('');
         }, 1500);
         break;
+      case 'color-change-upgrade':
+        setEffectText('🎨⬆️');
+        setEffectColor('text-purple-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
     }
   }, [positionAnimations, tile.number]);
 
