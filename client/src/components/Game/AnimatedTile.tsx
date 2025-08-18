@@ -117,6 +117,46 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
           setEffectText('');
         }, 800);
         break;
+
+      case 'discard-upgrade':
+        setEffectText('⬆');
+        setEffectColor('text-yellow-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 600);
+        break;
+
+      case 'tile-copy':
+        setEffectText('📋');
+        setEffectColor('text-green-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'number-prefix':
+        setEffectText('1');
+        setEffectColor('text-green-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 600);
+        break;
+
+      case 'board-increment':
+        setEffectText('📈');
+        setEffectColor('text-blue-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 500);
+        break;
+
+      case 'tile-stack':
+        setEffectText('🔵');
+        setEffectColor('text-blue-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
     }
   }, [positionAnimations, tile.number]);
 

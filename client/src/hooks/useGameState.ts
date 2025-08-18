@@ -42,12 +42,21 @@ export function useGameState() {
 		const allTiles = createInitialDeck();
 		const newRoundState = initializeNewRound(1, allTiles);
 		
-		setGameState(prev => ({
-			...prev,
-			...newRoundState,
-			round: 1,
-			gamePhase: 'playing'
-		}));
+		setGameState(prev => {
+			const relictManager = new RelictManager(prev.ownedRelicts);
+			
+			// Process initial drawn tiles through relict effects
+			const initialHand = newRoundState.playerHand || [];
+			const processedHand = initialHand.map(tile => relictManager.processDrawTile(tile));
+			
+			return {
+				...prev,
+				...newRoundState,
+				playerHand: processedHand,
+				round: 1,
+				gamePhase: 'playing'
+			};
+		});
 	}, []);
 
 	// Start a new round with end-of-round relict effects
@@ -133,7 +142,7 @@ export function useGameState() {
 			const hasColorVariety = colorsInHand.size >= 4;
 			
 			// Process tile placement through relict manager
-			const { tile: processedTile, canPlace, board: newBoard, effects } = relictManager.processTilePlacement(
+			const { tile: initialProcessedTile, canPlace, board: newBoard, effects } = relictManager.processTilePlacement(
 				tile, 
 				position, 
 				prev.board, 
@@ -149,6 +158,7 @@ export function useGameState() {
 			let doublingCount = 0;
 			let scoringCount = 1; // Start with 1 (normal scoring)
 			let ghostPositions: BoardPosition[] = [];
+			let processedTile = { ...initialProcessedTile }; // Make mutable for tile stacking
 
 			// Add Color Variety doubling effect if applicable (only if player owns the relict)
 			const hasColorVarietyRelict = prev.ownedRelicts.some(relict => relict.id === 'color-variety-double');
@@ -173,6 +183,36 @@ export function useGameState() {
 							// Multiply the scoring count by the multiplier (default 2 for scoring twice)
 							const multiplier = effect.multiplier || 2;
 							scoringCount *= multiplier;
+							break;
+						case 'discard-upgrade':
+							addAnimation('discard-upgrade', position, 600);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 600);
+							break;
+						case 'tile-copy':
+							addAnimation('tile-copy', position, 800);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
+							break;
+						case 'number-prefix':
+							addAnimation('number-prefix', position, 600);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 600);
+							break;
+						case 'board-increment':
+							addAnimation('board-increment', position, 500);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 500);
+							break;
+						case 'tile-stack':
+							addAnimation('tile-stack', position, 800);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
+							// Handle tile stacking: add the number of the tile below and remove it
+							const targetTile = newBoard[position.row][position.col];
+							if (targetTile) {
+								processedTile = {
+									...processedTile,
+									number: processedTile.number + targetTile.number
+								};
+								// Remove the tile below (it will be replaced by the new tile)
+								newBoard[position.row][position.col] = null;
+							}
 							break;
 						case 'multiplying':
 							addAnimation('multiplying', position, 800, undefined, undefined, effect.multiplier);
@@ -241,6 +281,17 @@ export function useGameState() {
 			// Add cumulative doubling to the score
 			newScore += totalScoreValue - (scoreValue * scoringCount);
 			
+			// Check if target score was reached and process tile copy effects
+			const wasTargetReached = prev.score < prev.targetScore && newScore >= prev.targetScore;
+			if (wasTargetReached) {
+				const copiedTiles = relictManager.processTargetScoreReached(processedTile, position);
+				// Add copied tiles to the deck
+				newDeck = [...newDeck, ...copiedTiles];
+			}
+			
+			// Process board increment effects
+			const boardAfterIncrement = relictManager.processBoardIncrement(newBoard);
+			
 			// Spawn ghost tiles if needed
 			if (ghostPositions.length > 0) {
 				setTimeout(() => {
@@ -263,11 +314,14 @@ export function useGameState() {
 			const cardsToDraw = Math.min(1, newDeck.length);
 			const drawnCards = newDeck.slice(0, cardsToDraw);
 			newDeck = newDeck.slice(cardsToDraw);
-			newHand = [...newHand, ...drawnCards];
+			
+			// Process drawn cards through relict effects
+			const processedDrawnCards = drawnCards.map(tile => relictManager.processDrawTile(tile));
+			newHand = [...newHand, ...processedDrawnCards];
 			
 			return {
 				...prev,
-				board: newBoard,
+				board: boardAfterIncrement,
 				playerHand: newHand,
 				deck: newDeck,
 				score: newScore
@@ -304,20 +358,28 @@ export function useGameState() {
 		}
 
 		setGameState(prev => {
+			const relictManager = new RelictManager(prev.ownedRelicts);
+			
+			// Process discard tiles through relict effects
+			const processedTiles = relictManager.processDiscardTiles(tilesToDiscard);
+			
 			const newHand = prev.playerHand.filter(tile => 
 				!tilesToDiscard.some(discardTile => discardTile.id === tile.id)
 			);
 			
-			const newDiscardPile = [...prev.discardPile, ...tilesToDiscard];
+			const newDiscardPile = [...prev.discardPile, ...processedTiles];
 			
 			// Draw new cards from deck
 			const cardsToDraw = Math.min(tilesToDiscard.length, prev.deck.length);
 			const drawnCards = prev.deck.slice(0, cardsToDraw);
 			const newDeck = prev.deck.slice(cardsToDraw);
 			
+			// Process drawn cards through relict effects
+			const processedDrawnCards = drawnCards.map(tile => relictManager.processDrawTile(tile));
+			
 			return {
 				...prev,
-				playerHand: [...newHand, ...drawnCards],
+				playerHand: [...newHand, ...processedDrawnCards],
 				discardPile: newDiscardPile,
 				deck: newDeck,
 				discards: prev.discards - 1
@@ -325,7 +387,7 @@ export function useGameState() {
 		});
 		
 		return true;
-	}, [gameState.discards, gameState.playerHand, gameState.deck]);
+	}, [gameState.discards, gameState.playerHand, gameState.deck, gameState.ownedRelicts]);
 
 	// Set dragged tile
 	const setDraggedTile = useCallback((tile: Tile | null) => {

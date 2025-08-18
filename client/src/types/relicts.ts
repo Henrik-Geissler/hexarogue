@@ -59,6 +59,10 @@ export interface RelictBehavior {
   
   // Called when calculating retrigger count
   onGetRetriggerCount?: (position: BoardPosition, board: (Tile | null)[][]) => number;
+  onDiscardTiles?: (tiles: Tile[]) => Tile[];
+  onTargetScoreReached?: (tile: Tile, position: BoardPosition) => Tile;
+  onDrawTile?: (tile: Tile) => Tile;
+  onBoardIncrement?: (board: (Tile | null)[][]) => (Tile | null)[][];
 }
 
 export interface Relict {
@@ -87,7 +91,7 @@ export interface RoundEndResult {
   vanishedTiles?: Tile[];
 }
 
-export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice';
+export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice' | 'discard-upgrade' | 'tile-copy' | 'number-prefix' | 'board-increment' | 'tile-stack';
 
 export interface RelictEffect {
   type: RelictEffectType;

@@ -12,6 +12,12 @@ import { blueCascadeRelict } from './blueCascade';
 import { emptyNeighborsRelict } from './emptyNeighbors';
 import { ghostSpawnRelict } from './ghostSpawn';
 import { colorVarietyRelict } from './colorVariety';
+import { discardUpgradeRelict } from './discardUpgrade';
+import { tileCopyRelict } from './tileCopy';
+import { thirteenthTileRelict } from './thirteenthTile';
+import { greenPrefixRelict } from './greenPrefix';
+import { boardIncrementRelict } from './boardIncrement';
+import { blueStackRelict } from './blueStack';
 
 export const ALL_RELICTS: Relict[] = [
   boardUpgradeRelict,
@@ -27,6 +33,12 @@ export const ALL_RELICTS: Relict[] = [
   emptyNeighborsRelict,
   ghostSpawnRelict,
   colorVarietyRelict,
+  discardUpgradeRelict,
+  tileCopyRelict,
+  thirteenthTileRelict,
+  greenPrefixRelict,
+  boardIncrementRelict,
+  blueStackRelict,
 ];
 
 export function createInitialRelictPool(): Relict[] {

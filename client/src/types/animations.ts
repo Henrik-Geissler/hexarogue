@@ -8,7 +8,12 @@ export type AnimationType =
   | 'upgrading'
   | 'multiplying'
   | 'ghost-spawn'
-  | 'scoring-twice';
+  | 'scoring-twice'
+  | 'discard-upgrade'
+  | 'tile-copy'
+  | 'number-prefix'
+  | 'board-increment'
+  | 'tile-stack';
 
 export interface AnimationState {
   id: string;

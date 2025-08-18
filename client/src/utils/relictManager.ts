@@ -269,4 +269,57 @@ export class RelictManager {
 
     return { board: currentBoard, vanishedTiles };
   }
+
+  // Process discard tiles through relict effects
+  processDiscardTiles(tiles: Tile[]): Tile[] {
+    let processedTiles = [...tiles];
+    
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onDiscardTiles) {
+        processedTiles = relict.behavior.onDiscardTiles(processedTiles);
+      }
+    }
+    
+    return processedTiles;
+  }
+
+  // Process target score reached
+  processTargetScoreReached(tile: Tile, position: BoardPosition): Tile[] {
+    const copiedTiles: Tile[] = [];
+    
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onTargetScoreReached) {
+        const copiedTile = relict.behavior.onTargetScoreReached(tile, position);
+        copiedTiles.push(copiedTile);
+      }
+    }
+    
+    return copiedTiles;
+  }
+
+  // Process drawn tile
+  processDrawTile(tile: Tile): Tile {
+    let processedTile = { ...tile };
+    
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onDrawTile) {
+        processedTile = relict.behavior.onDrawTile(processedTile);
+      }
+    }
+    
+    return processedTile;
+  }
+
+  // Process board increment
+  processBoardIncrement(board: (Tile | null)[][]): (Tile | null)[][] {
+    let processedBoard = board.map(row => [...row]);
+    
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onBoardIncrement) {
+        processedBoard = relict.behavior.onBoardIncrement(processedBoard);
+      }
+    }
+    
+    return processedBoard;
+  }
 }
