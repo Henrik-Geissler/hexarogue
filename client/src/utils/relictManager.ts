@@ -3,7 +3,8 @@ import {
   TilePlacementContext, 
   ScoringContext, 
   RoundEndContext,
-  RelictEffect
+  RelictEffect,
+  TilePlacementResult
 } from '../types/relicts';
 import type { Tile, BoardPosition } from '../types/game';
 
@@ -84,24 +85,28 @@ export function countEmptyNeighbors(position: BoardPosition, board: (Tile | null
 
 export function getEmptyNeighborPositions(position: BoardPosition, board: (Tile | null)[][]): BoardPosition[] {
   const { row, col } = position;
-  const isEvenRow = row % 2 === 0;
-  const neighborOffsets = isEvenRow 
-    ? [[0, -1], [0, 1], [-1, -1], [-1, 0], [1, -1], [1, 0]]
-    : [[0, -1], [0, 1], [-1, 0], [-1, 1], [1, 0], [1, 1]];
-  
   const emptyPositions: BoardPosition[] = [];
-  for (const [rowOffset, colOffset] of neighborOffsets) {
-    const neighborRow = row + rowOffset;
-    const neighborCol = col + colOffset;
+  
+  // Define the 6 hexagonal directions (flat-top orientation)
+  const directions = [
+    [-1, -1], [-1, 0], [-1, 1],  // Top row
+    [0, -1], [0, 1],              // Middle row
+    [1, -1], [1, 0], [1, 1]       // Bottom row
+  ];
+  
+  directions.forEach(([dRow, dCol]) => {
+    const newRow = row + dRow;
+    const newCol = col + dCol;
     
-    if (neighborRow >= 0 && neighborRow < board.length &&
-        neighborCol >= 0 && neighborCol < board[neighborRow]?.length) {
-      const neighbor = board[neighborRow][neighborCol];
-      if (!neighbor) {
-        emptyPositions.push({ row: neighborRow, col: neighborCol });
+    if (newRow >= 0 && newRow < board.length && 
+        newCol >= 0 && newCol < board[0].length) {
+      const tile = board[newRow][newCol];
+      // Only consider positions that are null (not occupied by tiles or blocks)
+      if (tile === null) {
+        emptyPositions.push({ row: newRow, col: newCol });
       }
     }
-  }
+  });
   
   return emptyPositions;
 }
@@ -115,66 +120,95 @@ export function upgradeTile(number: number): number {
 
 // Relict Manager - handles calling all relict behaviors in order
 export class RelictManager {
-  constructor(private ownedRelicts: Relict[]) {}
+  private ownedRelicts: Relict[];
+  private borderCopyTriggeredThisRound: boolean = false;
 
-  // Process tile placement through all relicts
+  constructor(ownedRelicts: Relict[]) {
+    this.ownedRelicts = ownedRelicts;
+  }
+
+  // Reset border copy flag at the start of each round
+  resetBorderCopyFlag() {
+    this.borderCopyTriggeredThisRound = false;
+  }
+
   processTilePlacement(
-    tile: Tile, 
-    position: BoardPosition, 
-    board: (Tile | null)[][], 
+    tile: Tile,
+    position: BoardPosition,
+    board: (Tile | null)[][],
     playerHand: Tile[],
-    isFirstTile: boolean, 
+    isFirstTile: boolean,
     isFirstTileThisRound: boolean
-  ): { tile: Tile; canPlace: boolean; board: (Tile | null)[][]; effects?: RelictEffect[] } {
-    let currentTile = { ...tile };
+  ): TilePlacementResult {
+    let processedTile = { ...tile };
     let canPlace = true;
-    let currentBoard = board.map(row => [...row]);
     let effects: RelictEffect[] = [];
+    let copiedTiles: Tile[] = [];
 
-    // Create placement context
-    const placementContext: TilePlacementContext = {
-      tile: currentTile,
-      position,
-      board: currentBoard,
-      playerHand,
-      isFirstTile,
-      isFirstTileThisRound
-    };
-
-    // Call onBeforeTilePlacement for all relicts in order
+    // Process before placement effects
     for (const relict of this.ownedRelicts) {
       if (relict.behavior.onBeforeTilePlacement) {
-        const result = relict.behavior.onBeforeTilePlacement(placementContext);
-        currentTile = result.tile;
-        canPlace = canPlace && result.canPlace;
-        
-        // Collect effects
+        const result = relict.behavior.onBeforeTilePlacement({
+          tile: processedTile,
+          position,
+          board,
+          isFirstTile,
+          isFirstTileThisRound,
+          playerHand
+        });
+
         if (result.effects) {
-          effects.push(...result.effects.map(effect => ({
-            ...effect,
-            relictId: effect.relictId || relict.id
-          })));
+          effects.push(...result.effects);
         }
-        
-        // Update context for next relict
-        placementContext.tile = currentTile;
+
+        if (!result.canPlace) {
+          canPlace = false;
+        }
+
+        processedTile = result.tile;
       }
     }
 
-    // If placement is allowed, place the tile and call onAfterTilePlacement
-    if (canPlace) {
-      currentBoard[position.row][position.col] = currentTile;
-      
-      // Call onAfterTilePlacement for all relicts in order
-      for (const relict of this.ownedRelicts) {
-        if (relict.behavior.onAfterTilePlacement) {
-          const afterContext = { ...placementContext, board: currentBoard };
-          currentBoard = relict.behavior.onAfterTilePlacement(afterContext);
+    // Place the tile on the board
+    const newBoard = board.map(row => [...row]);
+    newBoard[position.row][position.col] = processedTile;
+
+    // Process after placement effects
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onAfterTilePlacement) {
+        const result = relict.behavior.onAfterTilePlacement({
+          tile: processedTile,
+          position,
+          board: newBoard,
+          isFirstTile,
+          isFirstTileThisRound,
+          playerHand
+        });
+
+        // Handle border copy relict specifically
+        if (relict.id === 'border-copy' && typeof result === 'object' && 'copiedTiles' in result && result.copiedTiles && result.copiedTiles.length > 0 && !this.borderCopyTriggeredThisRound) {
+          copiedTiles.push(...result.copiedTiles);
+          this.borderCopyTriggeredThisRound = true;
+        }
+
+        // Update board if relict modified it
+        if (typeof result === 'object' && 'board' in result) {
+          // Result is an object with board property
+          Object.assign(newBoard, result.board);
+        } else {
+          // Result is just a board array
+          Object.assign(newBoard, result);
         }
       }
     }
 
-    return { tile: currentTile, canPlace, board: currentBoard, effects: effects.length > 0 ? effects : undefined };
+    return {
+      tile: processedTile,
+      canPlace,
+      board: newBoard,
+      effects,
+      copiedTiles
+    };
   }
 
   // Calculate score for a tile through all relicts
@@ -273,16 +307,28 @@ export class RelictManager {
   }
 
   // Process discard tiles through relict effects
-  processDiscardTiles(tiles: Tile[]): Tile[] {
+  processDiscardTiles(tiles: Tile[], context?: { board: (Tile | null)[][], handSize: number }): { processedTiles: Tile[]; ghostCopies: Tile[]; reduceDrawCount: number } {
     let processedTiles = [...tiles];
+    let ghostCopies: Tile[] = [];
+    let reduceDrawCount = 0;
     
     for (const relict of this.ownedRelicts) {
       if (relict.behavior.onDiscardTiles) {
-        processedTiles = relict.behavior.onDiscardTiles(processedTiles);
+        const result = relict.behavior.onDiscardTiles(processedTiles, context);
+        
+        if (typeof result === 'object' && 'processedTiles' in result) {
+          // New return type with ghost copies
+          processedTiles = result.processedTiles;
+          ghostCopies = [...ghostCopies, ...result.ghostCopies];
+          reduceDrawCount += result.reduceDrawCount;
+        } else {
+          // Old return type (just processed tiles)
+          processedTiles = result;
+        }
       }
     }
     
-    return processedTiles;
+    return { processedTiles, ghostCopies, reduceDrawCount };
   }
 
   // Process target score reached

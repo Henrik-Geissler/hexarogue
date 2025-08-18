@@ -27,6 +27,11 @@ import { discardGoldRelict } from './discardGold';
 import { goldMultiplierRelict } from './goldMultiplier';
 import { lowGoldUpgradeRelict } from './lowGoldUpgrade';
 import { sellUpgradeRelict } from './sellUpgrade';
+import { singleNeighborCopyRelict } from './singleNeighborCopy';
+import { colorFirstUpgradeRelict } from './colorFirstUpgrade';
+import { borderCopyRelict } from './borderCopy';
+import { ghostHandRelict } from './ghostHand';
+import { blueMirrorRelict } from './blueMirror';
 
 export const ALL_RELICTS: Relict[] = [
   alchemyRelict,
@@ -57,6 +62,11 @@ export const ALL_RELICTS: Relict[] = [
   goldMultiplierRelict,
   lowGoldUpgradeRelict,
   sellUpgradeRelict,
+  singleNeighborCopyRelict,
+  colorFirstUpgradeRelict,
+  borderCopyRelict,
+  ghostHandRelict,
+  blueMirrorRelict,
 ];
 
 export function createInitialRelictPool(): Relict[] {
@@ -89,6 +99,10 @@ export function createInitialRelictPool(): Relict[] {
     goldMultiplierRelict,
     lowGoldUpgradeRelict,
     sellUpgradeRelict,
+    singleNeighborCopyRelict,
+    colorFirstUpgradeRelict,
+    borderCopyRelict,
+    ghostHandRelict,
   ];
 }
 

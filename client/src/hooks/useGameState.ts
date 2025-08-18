@@ -6,7 +6,8 @@ import {
 	hasPlayableCards,
 	initializeNewRound,
 	createEmptyBoard,
-	findArea
+	findArea,
+	findBlueNeighbors
 } from '../utils/gameLogic';
 import { RelictManager, getEmptyNeighborPositions } from '../utils/relictManager';
 import { createInitialRelictPool, getRelictSelection } from '../relicts';
@@ -39,11 +40,12 @@ export function useGameState() {
 	}));
 
 	// Start a new game
-	const startNewGame = useCallback(() => {
-		setGameState(prev => {
-			const allTiles = createInitialDeck();
-			const newRoundState = initializeNewRound(1, allTiles, prev.gold);
-			const relictManager = new RelictManager(prev.ownedRelicts);
+			const startNewGame = useCallback(() => {
+			setGameState(prev => {
+				const allTiles = createInitialDeck();
+				const newRoundState = initializeNewRound(1, allTiles, prev.gold);
+				const relictManager = new RelictManager(prev.ownedRelicts);
+				relictManager.resetBorderCopyFlag();
 			
 			// Process initial drawn tiles through relict effects
 			const initialHand = newRoundState.playerHand || [];
@@ -60,9 +62,10 @@ export function useGameState() {
 	}, []);
 
 	// Start a new round with end-of-round relict effects
-	const startNewRound = useCallback(() => {
-		setGameState(prev => {
-			const currentRelictManager = new RelictManager(prev.ownedRelicts);
+			const startNewRound = useCallback(() => {
+			setGameState(prev => {
+				const currentRelictManager = new RelictManager(prev.ownedRelicts);
+				currentRelictManager.resetBorderCopyFlag();
 			
 			// Process round end effects through relict manager
 			const { board: boardAfterEffects, vanishedTiles } = currentRelictManager.processRoundEnd(prev.board, prev.round);
@@ -72,9 +75,9 @@ export function useGameState() {
 				...prev.deck,
 				...prev.playerHand,
 				...prev.discardPile,
-				...boardAfterEffects.flat().filter(tile => tile !== null) as Tile[],
+				...boardAfterEffects.flat().filter(tile => tile !== null && !tile.isBlock) as Tile[], // Exclude blocks
 				...vanishedTiles
-			];
+			].filter(tile => !tile.isGhost); // Remove all ghost copies at round end
 			
 			const newRoundState = initializeNewRound(prev.round + 1, allTiles, prev.gold);
 			
@@ -155,8 +158,13 @@ export function useGameState() {
 
 	// Place a tile on the board with enhanced animations
 	const placeTile = useCallback(async (tile: Tile, position: BoardPosition) => {
-		const isFirstTile = gameState.board.every(row => row.every(cell => cell === null));
-		const isFirstTileThisRound = gameState.board.every(row => row.every(cell => cell === null));
+		// Check if this is the first tile (board is empty of actual tiles, not blocks or upgrade fields)
+		const isFirstTile = gameState.board.every(row => 
+			row.every(cell => cell === null || cell.isBlock || cell.isUpgradeField)
+		);
+		const isFirstTileThisRound = gameState.board.every(row => 
+			row.every(cell => cell === null || cell.isBlock || cell.isUpgradeField)
+		);
 		
 		const currentRelictManager = new RelictManager(gameState.ownedRelicts);
 		
@@ -177,7 +185,7 @@ export function useGameState() {
 			const relictManager = new RelictManager(prev.ownedRelicts);
 			
 			// Process tile placement through relict manager
-			const { tile: initialProcessedTile, canPlace, board: newBoard, effects } = relictManager.processTilePlacement(
+			const { tile: initialProcessedTile, canPlace, board: newBoard, effects, copiedTiles } = relictManager.processTilePlacement(
 				tile, 
 				position, 
 				prev.board, 
@@ -190,6 +198,25 @@ export function useGameState() {
 				return prev; // Placement was prevented by a relict
 			}
 
+			// Add copied tiles to deck if any were created
+			let updatedDeck = prev.deck;
+			if (copiedTiles && copiedTiles.length > 0) {
+				updatedDeck = [...updatedDeck, ...copiedTiles];
+				// Trigger border copy animation
+				addAnimation('border-copy', position, 800);
+				triggerRelictAnimation('border-copy', 800);
+			}
+			
+			// Check for blue mirror effect
+			if (tile.color !== 'blue' && prev.ownedRelicts.some(relict => relict.id === 'blue-mirror')) {
+				// Check if any blue neighbors exist
+				const blueNeighbors = findBlueNeighbors(position, newBoard);
+				if (blueNeighbors.length > 0) {
+					addAnimation('blue-mirror', position, 800);
+					triggerRelictAnimation('blue-mirror', 800);
+				}
+			}
+			
 			// Count doubling effects for cumulative scoring
 			let doublingCount = 0;
 			let scoringCount = 1; // Start with 1 (normal scoring)
@@ -327,7 +354,7 @@ export function useGameState() {
 			}
 			
 			let newHand = prev.playerHand.filter(handTile => handTile.id !== tile.id);
-			let newDeck = prev.deck;
+			let newDeck = updatedDeck;
 			
 			// Calculate retrigger count for blue neighbor effect
 			const retriggerCount = relictManager.getRetriggerCount(position, newBoard);
@@ -494,6 +521,21 @@ export function useGameState() {
 				finalBoard = relictManager.processEveryOtherTurn(boardAfterAreas);
 			}
 			
+			// Check for single neighbor copy effect
+			const emptyPositions = getEmptyNeighborPositions(position, boardAfterAreas);
+			if (emptyPositions.length === 1 && prev.ownedRelicts.some(relict => relict.id === 'single-neighbor-copy')) {
+				addAnimation('single-neighbor-copy', emptyPositions[0], 800);
+				triggerRelictAnimation('single-neighbor-copy', 800);
+			}
+			
+			// Check for color first upgrade effect
+			const allTiles = boardAfterAreas.flat().filter(t => t !== null && !t.isBlock && !t.isUpgradeField);
+			const tilesOfSameColor = allTiles.filter(t => t!.color === processedTile.color);
+			if (tilesOfSameColor.length === 1 && prev.ownedRelicts.some(relict => relict.id === 'color-first-upgrade')) {
+				addAnimation('color-first-upgrade', position, 800);
+				triggerRelictAnimation('color-first-upgrade', 800);
+			}
+			
 			return {
 				...prev,
 				board: finalBoard,
@@ -544,9 +586,9 @@ export function useGameState() {
 					...prev.deck,
 					...prev.playerHand,
 					...prev.discardPile,
-					...boardAfterEffects.flat().filter(tile => tile !== null) as Tile[],
+					...boardAfterEffects.flat().filter(tile => tile !== null && !tile.isBlock) as Tile[], // Exclude blocks
 					...vanishedTiles
-				];
+				].filter(tile => !tile.isGhost); // Remove all ghost copies at round end
 				
 				// Initialize new round state
 				const newRoundState = initializeNewRound(prev.round + 1, allTiles, newGold);
@@ -587,8 +629,11 @@ export function useGameState() {
 		setGameState(prev => {
 			const relictManager = new RelictManager(prev.ownedRelicts);
 			
-			// Process discard tiles through relict effects
-			const processedTiles = relictManager.processDiscardTiles(tilesToDiscard);
+			// Process discard tiles through relict effects with context
+			const { processedTiles, ghostCopies, reduceDrawCount } = relictManager.processDiscardTiles(
+				tilesToDiscard, 
+				{ board: prev.board, handSize: prev.playerHand.length }
+			);
 			
 			// Calculate gold from yellow tiles
 			let goldEarned = 0;
@@ -613,8 +658,17 @@ export function useGameState() {
 			
 			const newDiscardPile = [...prev.discardPile, ...processedTiles];
 			
-			// Draw new cards from deck
-			const cardsToDraw = Math.min(tilesToDiscard.length, prev.deck.length);
+			// Add ghost copies to hand before drawing
+			const handWithGhosts = [...newHand, ...ghostCopies];
+			
+			// Trigger ghost hand animation if ghost copies were created
+			if (ghostCopies.length > 0) {
+				addAnimation('ghost-hand', { row: 0, col: 0 }, 800);
+				triggerRelictAnimation('ghost-hand', 800);
+			}
+			
+			// Draw new cards from deck (reduced by ghost copies)
+			const cardsToDraw = Math.min(tilesToDiscard.length - reduceDrawCount, prev.deck.length);
 			const drawnCards = prev.deck.slice(0, cardsToDraw);
 			const newDeck = prev.deck.slice(cardsToDraw);
 			
@@ -652,7 +706,7 @@ export function useGameState() {
 			
 			return {
 				...prev,
-				playerHand: [...newHand, ...processedDrawnCards],
+				playerHand: [...handWithGhosts, ...processedDrawnCards],
 				discardPile: newDiscardPile,
 				deck: newDeck,
 				discards: prev.discards - 1,
@@ -683,7 +737,8 @@ export function useGameState() {
 		const currentRelictManager = new RelictManager(gameState.ownedRelicts);
 		const canPlayCards = hasPlayableCards(gameState.playerHand, gameState.board, currentRelictManager);
 
-		if (!canPlayCards && !hasDiscards && !hasCardsInDeck) {
+		// Player loses if they have no playable cards AND either no discards left OR no cards in deck
+		if (!canPlayCards && (!hasDiscards || !hasCardsInDeck)) {
 			setGameState(prev => ({ ...prev, gamePhase: 'lost' }));
 		}
 	}, [gameState.discards, gameState.deck.length, gameState.playerHand, gameState.board, gameState.gamePhase, gameState.ownedRelicts]);

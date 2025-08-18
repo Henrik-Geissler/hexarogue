@@ -51,7 +51,7 @@ export function PlayerHand({
 
   // Check which tiles are actually playable
   const playableCards = hand.filter(tile => {
-    const isFirstTile = board.every(row => row.every(cell => cell === null));
+    const isFirstTile = board.every(row => row.every(cell => cell === null || cell.isBlock || cell.isUpgradeField));
     if (isFirstTile) return true; // First tile can be placed anywhere
     
     // Create relict manager for this check
@@ -60,7 +60,7 @@ export function PlayerHand({
     // Check if tile can be placed anywhere on the board
     for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[row].length; col++) {
-        if (board[row][col] === null) {
+        if (board[row][col] === null || board[row][col]?.isUpgradeField) {
           if (canPlaceTile(tile, { row, col }, board, isFirstTile, relictManager)) {
             return true;
           }

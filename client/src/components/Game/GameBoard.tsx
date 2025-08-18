@@ -28,7 +28,7 @@ export function GameBoard({
   animations,
   isAnimating
 }: GameBoardProps) {
-  const isFirstTile = board.every(row => row.every(cell => cell === null));
+  const isFirstTile = board.every(row => row.every(cell => cell === null || cell.isBlock || cell.isUpgradeField));
 
   const handleDrop = useCallback(async (e: React.DragEvent, position: BoardPosition) => {
     e.preventDefault();

@@ -4,10 +4,11 @@ export type TileColor = 'red' | 'green' | 'blue' | 'yellow';
 
 export interface Tile {
   id: string;
+  color: 'red' | 'green' | 'blue' | 'yellow';
   number: number;
-  color: TileColor;
   isGhost?: boolean;
-  isUpgradeField?: boolean; // New field for upgrade fields
+  isUpgradeField?: boolean;
+  isBlock?: boolean; // New property to identify blocks
 }
 
 export interface BoardPosition {

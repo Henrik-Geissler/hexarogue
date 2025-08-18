@@ -22,6 +22,8 @@ const colorStyles: Record<TileColor, { fill: string; stroke: string; text: strin
   yellow: { fill: '#eab308', stroke: '#ca8a04', text: 'black' }
 };
 
+const blockStyles = { fill: '#374151', stroke: '#1f2937', text: 'white' };
+
 function getHexPath(size: number): string {
   const points: string[] = [];
   
@@ -48,7 +50,12 @@ export function Tile({
   onDragEnd,
   className 
 }: TileProps) {
-  const colors = colorStyles[tile.color];
+  const colors = tile.isBlock ? blockStyles : colorStyles[tile.color];
+
+  // Don't render blocks at all - they should be invisible
+  if (tile.isBlock) {
+    return null;
+  }
 
   if (isHexagonal) {
     return (
@@ -75,8 +82,8 @@ export function Tile({
         >
           <path
             d={getHexPath(size)}
-            fill={tile.isUpgradeField ? '#f3f4f6' : (tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill)}
-            stroke={tile.isUpgradeField ? '#d1d5db' : (tile.isGhost ? '#666' : colors.stroke)}
+            fill={tile.isUpgradeField ? '#f3f4f6' : (tile.isGhost ? `${colors.fill}80` : colors.fill)}
+            stroke={tile.isUpgradeField ? '#d1d5db' : (tile.isGhost ? `${colors.stroke}80` : colors.stroke)}
             strokeWidth="2"
             className={cn(
               "transition-all duration-200",
@@ -102,7 +109,7 @@ export function Tile({
             tile.isGhost && "opacity-80"
           )}
         >
-          {tile.isUpgradeField ? '⬆' : tile.number}
+          {tile.number}
         </div>
       </div>
     );

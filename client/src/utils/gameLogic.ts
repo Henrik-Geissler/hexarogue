@@ -1,5 +1,6 @@
 import { Tile, TileColor, BoardPosition, GameState } from '../types/game';
 import { RelictManager } from './relictManager';
+import { TilePlacementContext } from '../types/relicts';
 
 // Create initial deck of 36 tiles (1-9 in 4 colors)
 export function createInitialDeck(): Tile[] {
@@ -115,25 +116,55 @@ export function canPlaceTile(
   position: BoardPosition,
   board: (Tile | null)[][],
   isFirstTile: boolean,
-  relictManager: RelictManager
+  relictManager?: RelictManager
 ): boolean {
-  // If any relict explicitly allows placement, allow it
-  if (relictManager.canPlaceTile(tile, position, board, isFirstTile)) {
+  // Check if position is within bounds
+  if (position.row < 0 || position.row >= board.length || 
+      position.col < 0 || position.col >= board[0].length) {
+    return false;
+  }
+
+  // Check if position is already occupied (excluding upgrade fields and blocks)
+  const targetTile = board[position.row][position.col];
+  if (targetTile !== null && !targetTile.isUpgradeField) {
+    return false;
+  }
+
+  // First tile can be placed anywhere (check if board is empty of actual tiles, not blocks or upgrade fields)
+  if (isFirstTile) {
     return true;
   }
 
-  // Otherwise, fall back to basic placement rules
-  return canPlaceTileBasic(tile, position, board, isFirstTile);
+  // Get neighboring tiles (excluding blocks and upgrade fields)
+  const neighbors = getNeighbors(position, board);
+  const validNeighbors = neighbors.filter(n => n !== null && !n.isBlock && !n.isUpgradeField);
+
+  // Must have at least one neighbor
+  if (validNeighbors.length === 0) {
+    return false;
+  }
+
+  // Check if all neighboring tiles either match color or share digits
+  return validNeighbors.every(neighbor => {
+    return neighbor!.color === tile.color || numbersShareDigit(neighbor!.number, tile.number);
+  });
 }
 
 // Check if there are any playable cards in hand
 export function hasPlayableCards(hand: Tile[], board: (Tile | null)[][], relictManager: RelictManager): boolean {
-  const isFirstTile = board.every(row => row.every(cell => cell === null));
-  
   return hand.some(tile => {
+    // Check if this tile can be placed anywhere on the board
     for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[row].length; col++) {
-        if (canPlaceTile(tile, { row, col }, board, isFirstTile, relictManager)) {
+        const position = { row, col };
+        // Check if position is occupied (excluding upgrade fields and blocks)
+        const targetTile = board[row][col];
+        if (targetTile !== null && !targetTile.isUpgradeField) {
+          continue; // Skip occupied positions
+        }
+        
+        // Check if tile can be placed at this position
+        if (canPlaceTile(tile, position, board, false, relictManager)) {
           return true;
         }
       }
@@ -160,18 +191,62 @@ export function calculateBoardScore(board: (Tile | null)[][], ownedRelicts: any[
   return total;
 }
 
+export function createBlock(): Tile {
+  return {
+    id: `block-${Date.now()}-${Math.random()}`,
+    color: 'red', // Blocks can have any color, but they're not functional tiles
+    number: 0,
+    isBlock: true
+  };
+}
+
+export function placeRandomBlocks(board: (Tile | null)[][]): (Tile | null)[][] {
+  // Pick a random number between 2 and 5
+  const blockCount = Math.floor(Math.random() * 4) + 2; // 2 to 5 blocks
+  
+  // Get all free positions on the board
+  const freePositions: { row: number; col: number }[] = [];
+  for (let row = 0; row < board.length; row++) {
+    for (let col = 0; col < board[row].length; col++) {
+      if (board[row][col] === null) {
+        freePositions.push({ row, col });
+      }
+    }
+  }
+  
+  // Shuffle free positions and take the first blockCount positions
+  const shuffledPositions = [...freePositions].sort(() => Math.random() - 0.5);
+  const selectedPositions = shuffledPositions.slice(0, Math.min(blockCount, freePositions.length));
+  
+  // Create new board with blocks placed
+  const newBoard = board.map(row => [...row]);
+  selectedPositions.forEach(pos => {
+    newBoard[pos.row][pos.col] = createBlock();
+  });
+  
+  return newBoard;
+}
+
 // Initialize a new round  
 export function initializeNewRound(currentRound: number, allTiles: Tile[], currentGold: number = 0): Partial<GameState> {
   const shuffledDeck = shuffleDeck(allTiles);
   
-  // Only draw initial hand for the first round
-  // For subsequent rounds, hand will be drawn after relict selection
-  const playerHand = currentRound === 1 ? shuffledDeck.splice(0, 7) : [];
+  // Create empty board and place random blocks
+  const emptyBoard = createEmptyBoard();
+  const boardWithBlocks = placeRandomBlocks(emptyBoard);
+  
+  // Draw initial hand (7 cards) for first round only
+  let playerHand: Tile[] = [];
+  if (currentRound === 1) {
+    const cardsToDraw = Math.min(7, shuffledDeck.length);
+    playerHand = shuffledDeck.slice(0, cardsToDraw);
+    shuffledDeck.splice(0, cardsToDraw);
+  }
   
   return {
     deck: shuffledDeck,
     playerHand,
-    board: createEmptyBoard(),
+    board: boardWithBlocks,
     discardPile: [],
     discards: 4,
     score: 0,
@@ -223,7 +298,7 @@ export function findArea(
     
     visited.add(key);
     const tile = board[position.row]?.[position.col];
-    if (!tile || tile.isUpgradeField) return;
+    if (!tile || tile.isUpgradeField || tile.isBlock) return; // Exclude blocks and upgrade fields
     
     // Check if tile belongs to the area based on rule
     let belongsToArea = false;
@@ -278,4 +353,32 @@ function getNeighborPosition(position: BoardPosition, neighborIndex: number): Bo
   
   const [rowOffset, colOffset] = neighborOffsets[neighborIndex];
   return { row: row + rowOffset, col: col + colOffset };
+}
+
+// Helper function to find blue neighbors
+export function findBlueNeighbors(position: BoardPosition, board: (Tile | null)[][]): BoardPosition[] {
+  const { row, col } = position;
+  const blueNeighbors: BoardPosition[] = [];
+  
+  // Define the 6 hexagonal directions (flat-top orientation)
+  const directions = [
+    [-1, -1], [-1, 0], [-1, 1],  // Top row
+    [0, -1], [0, 1],              // Middle row
+    [1, -1], [1, 0], [1, 1]       // Bottom row
+  ];
+  
+  directions.forEach(([dRow, dCol]) => {
+    const newRow = row + dRow;
+    const newCol = col + dCol;
+    
+    if (newRow >= 0 && newRow < board.length && 
+        newCol >= 0 && newCol < board[newRow].length) {
+      const tile = board[newRow][newCol];
+      if (tile && tile.color === 'blue' && !tile.isBlock) {
+        blueNeighbors.push({ row: newRow, col: newCol });
+      }
+    }
+  });
+  
+  return blueNeighbors;
 }

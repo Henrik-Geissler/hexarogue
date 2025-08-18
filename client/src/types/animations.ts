@@ -21,7 +21,12 @@ export type AnimationType =
   | 'digit-replace'
   | 'blue-trigger'
   | 'green-upgrade'
-  | 'gold-earned';
+  | 'gold-earned'
+  | 'single-neighbor-copy'
+  | 'color-first-upgrade'
+  | 'border-copy'
+  | 'ghost-hand'
+  | 'blue-mirror';
 
 export interface AnimationState {
   id: string;

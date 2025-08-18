@@ -50,7 +50,7 @@ export interface RelictBehavior {
   onTileScores?: (context: ScoringContext) => number;
   
   // Called after a tile is placed, can modify the board
-  onAfterTilePlacement?: (context: TilePlacementContext) => (Tile | null)[][];
+  onAfterTilePlacement?: (context: TilePlacementContext) => (Tile | null)[][] | { board: (Tile | null)[][]; copiedTiles?: Tile[] };
   
   // Called at the end of a round, can modify the board
   onRoundEnd?: (context: RoundEndContext) => RoundEndResult;
@@ -60,7 +60,7 @@ export interface RelictBehavior {
   
   // Called when calculating retrigger count
   onGetRetriggerCount?: (position: BoardPosition, board: (Tile | null)[][]) => number;
-  onDiscardTiles?: (tiles: Tile[]) => Tile[];
+  onDiscardTiles?: (tiles: Tile[], context?: { board: (Tile | null)[][], handSize: number }) => Tile[] | { processedTiles: Tile[]; ghostCopies: Tile[]; reduceDrawCount: number };
   onTargetScoreReached?: (tile: Tile, position: BoardPosition) => Tile;
   onDrawTile?: (tile: Tile) => Tile;
   onBoardIncrement?: (board: (Tile | null)[][]) => (Tile | null)[][];
@@ -96,7 +96,9 @@ export interface RelictState {
 export interface TilePlacementResult {
   tile: Tile;
   canPlace: boolean;
+  board: (Tile | null)[][];
   effects?: RelictEffect[];
+  copiedTiles?: Tile[]; // New field for copied tiles
 }
 
 export interface RoundEndResult {

@@ -221,6 +221,46 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
           setEffectText('');
         }, 1000);
         break;
+
+      case 'single-neighbor-copy':
+        setEffectText('🔄');
+        setEffectColor('text-blue-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'color-first-upgrade':
+        setEffectText('🎨');
+        setEffectColor('text-purple-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'border-copy':
+        setEffectText('🔄');
+        setEffectColor('text-blue-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'ghost-hand':
+        setEffectText('👻');
+        setEffectColor('text-gray-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'blue-mirror':
+        setEffectText('🪞');
+        setEffectColor('text-blue-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
     }
   }, [positionAnimations, tile.number]);
 

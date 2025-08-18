@@ -15,7 +15,7 @@ export function ScoreArea({ stats, round, gold, onGoldDrop }: ScoreAreaProps) {
   return (
     <Card className="bg-gradient-to-br from-purple-800 to-purple-900 border-purple-600 text-white">
       <CardHeader>
-        <CardTitle className="text-center text-xl">Round {round} Stats</CardTitle>
+        <CardTitle className="text-center text-xl">Round {round}</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
