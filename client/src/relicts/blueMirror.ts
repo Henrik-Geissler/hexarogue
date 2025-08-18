@@ -6,7 +6,7 @@ export const blueMirrorBehavior: RelictBehavior = {
     const { tile, position, board } = context;
     
     // Only trigger for non-blue tiles
-    if (tile.color === 'blue') {
+    	if (tile.matchesColor('blue')) {
       return { board, copiedTiles: [] };
     }
     
@@ -54,7 +54,7 @@ function findBlueNeighbors(position: BoardPosition, board: (Tile | null)[][]): B
     if (newRow >= 0 && newRow < board.length && 
         newCol >= 0 && newCol < board[newRow].length) {
       const tile = board[newRow][newCol];
-      if (tile && tile.color === 'blue' && !tile.isBlock && !tile.isUpgradeField) {
+      		if (tile && tile.matchesColor('blue') && !tile.isBlock && !tile.isUpgradeField) {
         blueNeighbors.push({ row: newRow, col: newCol });
       }
     }

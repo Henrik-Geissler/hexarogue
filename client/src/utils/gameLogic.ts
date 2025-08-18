@@ -29,7 +29,8 @@ export function createTile(color: TileColor, number: number): Tile {
     ...baseTile,
     matchesColor: function(targetColor: TileColor): boolean {
       // Check current color (including mixed colors) and white tiles match any color
-      return this.color === targetColor || this.color === 'white';
+      const currentColor = this.mixedColor || this.color;
+      return currentColor === targetColor || currentColor === 'white';
     }
   };
 }

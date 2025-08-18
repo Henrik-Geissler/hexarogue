@@ -4,7 +4,7 @@ import { Tile } from '../types/game';
 export const blueTriggerBehavior: RelictBehavior = {
   onDrawTile: (tile: Tile) => {
     // Check if the drawn tile is blue
-    if (tile.color === 'blue') {
+    	if (tile.matchesColor('blue')) {
       // Return the same tile but mark it for triggering
       return {
         ...tile,

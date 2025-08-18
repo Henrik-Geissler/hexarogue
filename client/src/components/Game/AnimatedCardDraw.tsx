@@ -26,7 +26,7 @@ export function AnimatedCardDraw({
       setIsAnimating(true);
       
       // Check if this is a green tile that should trigger Green Growth
-      if (tile.color === 'green' && !tile.number.toString().includes('1') && onGreenGrowth) {
+      		if (tile.matchesColor('green') && !tile.number.toString().includes('1') && onGreenGrowth) {
         setTimeout(() => {
           setShowGreenGrowth(true);
           onGreenGrowth();

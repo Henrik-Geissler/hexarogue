@@ -9,7 +9,7 @@ export const colorFirstUpgradeBehavior: RelictBehavior = {
     const allTiles = board.flat().filter(t => t !== null);
     
     // Check if this is the first tile of this color placed this round
-    const tilesOfSameColor = allTiles.filter(t => t!.color === tile.color);
+    	const tilesOfSameColor = allTiles.filter(t => t!.matchesColor(tile.color));
     const isFirstOfColor = tilesOfSameColor.length === 1; // Only the current tile
     
     if (isFirstOfColor) {

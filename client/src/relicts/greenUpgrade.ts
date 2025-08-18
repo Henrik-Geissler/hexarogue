@@ -4,7 +4,7 @@ import { Tile } from '../types/game';
 export const greenUpgradeBehavior: RelictBehavior = {
   onDrawTile: (tile: Tile) => {
     // Check if the drawn tile is green
-    if (tile.color === 'green') {
+    	if (tile.matchesColor('green')) {
       // Return the same tile but mark it for green upgrade effect
       return {
         ...tile,

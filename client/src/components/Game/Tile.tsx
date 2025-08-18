@@ -86,7 +86,7 @@ export function Tile({
           !isPlayable && "opacity-70 cursor-not-allowed border-dashed",
           "hover:scale-105 active:scale-95",
           tile.isUpgradeField && "animate-upgrade-field",
-          tile.color === 'white' && "white-tile-rainbow",
+          					tile.matchesColor('white') && "white-tile-rainbow",
           className
         )}
         style={{ 

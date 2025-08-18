@@ -50,7 +50,7 @@ export function countBlueNeighbors(position: BoardPosition, board: (Tile | null)
     if (neighborRow >= 0 && neighborRow < board.length &&
         neighborCol >= 0 && neighborCol < board[neighborRow]?.length) {
       const neighbor = board[neighborRow][neighborCol];
-      if (neighbor && neighbor.color === 'blue') {
+      		if (neighbor && neighbor.matchesColor('blue')) {
         blueCount++;
       }
     }

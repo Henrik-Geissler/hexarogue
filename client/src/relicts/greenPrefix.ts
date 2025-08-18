@@ -4,7 +4,7 @@ import { Tile } from '../types/game';
 export const greenPrefixBehavior: RelictBehavior = {
   onDrawTile: (tile: Tile) => {
     // Check if it's a green tile and doesn't contain digit 1
-    if (tile.color === 'green' && !tile.number.toString().includes('1')) {
+    	if (tile.matchesColor('green') && !tile.number.toString().includes('1')) {
       // Add 1 in front of the number
       const newNumber = parseInt('1' + tile.number.toString());
       return {

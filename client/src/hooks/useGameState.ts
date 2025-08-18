@@ -12,6 +12,7 @@ import {
 	consumeTiles,
 	isLastBorderSpot
 } from '../utils/gameLogic';
+import { mixColors } from '../utils/colorMixing';
 import { RelictManager, getEmptyNeighborPositions } from '../utils/relictManager';
 import { createInitialRelictPool, getRelictSelection } from '../relicts';
 import { useAnimations } from './useAnimations';
@@ -479,14 +480,14 @@ export function useGameState() {
 			// Check for special drawing effects
 			processedDrawnCards.forEach((tile, index) => {
 				// Check for blue trigger relict
-				if (tile.color === 'blue' && prev.ownedRelicts.some(relict => relict.id === 'blue-trigger')) {
+				if (tile.matchesColor('blue') && prev.ownedRelicts.some(relict => relict.id === 'blue-trigger')) {
 					// Trigger the blue tile (this would need more complex logic for hand neighbors)
 					addAnimation('blue-trigger', position, 700);
 					triggerRelictAnimation('blue-trigger', 700);
 				}
 				
 				// Check for green upgrade relict
-				if (tile.color === 'green' && prev.ownedRelicts.some(relict => relict.id === 'green-upgrade')) {
+				if (tile.matchesColor('green') && prev.ownedRelicts.some(relict => relict.id === 'green-upgrade')) {
 					// Upgrade all green tiles on the board
 					addAnimation('green-upgrade', position, 700);
 					triggerRelictAnimation('green-upgrade', 700);
@@ -496,7 +497,7 @@ export function useGameState() {
 						setGameState(prev => {
 							const newBoard = prev.board.map(row => 
 								row.map(tile => 
-									tile && tile.color === 'green' 
+									tile && tile.matchesColor('green') 
 										? { ...tile, number: tile.number + 1 }
 										: tile
 								)
@@ -550,7 +551,7 @@ export function useGameState() {
 			
 			// Check for color first upgrade effect
 			const allTiles = boardAfterAreas.flat().filter(t => t !== null && !t.isBlock && !t.isUpgradeField);
-			const tilesOfSameColor = allTiles.filter(t => t!.color === processedTile.color);
+			const tilesOfSameColor = allTiles.filter(t => t!.matchesColor(processedTile.color));
 			if (tilesOfSameColor.length === 1 && prev.ownedRelicts.some(relict => relict.id === 'color-first-upgrade')) {
 				addAnimation('color-first-upgrade', position, 800);
 				triggerRelictAnimation('color-first-upgrade', 800);
@@ -661,7 +662,7 @@ export function useGameState() {
 			// Calculate gold from yellow tiles
 			let goldEarned = 0;
 			tilesToDiscard.forEach(tile => {
-				if (tile.color === 'yellow') {
+				if (tile.matchesColor('yellow')) {
 					prev.ownedRelicts.forEach(relict => {
 						if (relict.behavior.onDiscardYellowTile) {
 							goldEarned += relict.behavior.onDiscardYellowTile(tile);
@@ -701,13 +702,13 @@ export function useGameState() {
 			// Check for special drawing effects in discard
 			processedDrawnCards.forEach((tile, index) => {
 				// Check for blue trigger relict
-				if (tile.color === 'blue' && prev.ownedRelicts.some(relict => relict.id === 'blue-trigger')) {
+				if (tile.matchesColor('blue') && prev.ownedRelicts.some(relict => relict.id === 'blue-trigger')) {
 					// Trigger the blue tile (this would need more complex logic for hand neighbors)
 					triggerRelictAnimation('blue-trigger', 700);
 				}
 				
 				// Check for green upgrade relict
-				if (tile.color === 'green' && prev.ownedRelicts.some(relict => relict.id === 'green-upgrade')) {
+				if (tile.matchesColor('green') && prev.ownedRelicts.some(relict => relict.id === 'green-upgrade')) {
 					// Upgrade all green tiles on the board
 					triggerRelictAnimation('green-upgrade', 700);
 					
@@ -716,7 +717,7 @@ export function useGameState() {
 						setGameState(prev => {
 							const newBoard = prev.board.map(row => 
 								row.map(tile => 
-									tile && tile.color === 'green' 
+									tile && tile.matchesColor('green') 
 										? { ...tile, number: tile.number + 1 }
 										: tile
 								)

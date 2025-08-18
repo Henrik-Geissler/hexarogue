@@ -3,7 +3,7 @@ import { Tile, BoardPosition } from '../types/game';
 
 export const yellowFreedomBehavior: RelictBehavior = {
   onCanPlaceTile: (tile: Tile, _position: BoardPosition, _board: (Tile | null)[][], _isFirstTile: boolean) => {
-    if (tile.color === 'yellow') {
+    	if (tile.matchesColor('yellow')) {
       return true;
     }
     return false;
