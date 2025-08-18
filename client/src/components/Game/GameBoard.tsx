@@ -6,6 +6,7 @@ import { canPlaceTile } from '../../utils/gameLogic';
 import { RelictManager } from '../../utils/relictManager';
 import { AnimatedTile } from './AnimatedTile';
 import { AnimationState } from '../../types/animations';
+import { cn } from '../../lib/utils';
 
 interface GameBoardProps {
   board: (TileType | null)[][];
@@ -54,23 +55,23 @@ export function GameBoard({
   }, [onHoverPosition]);
 
   // Responsive hex sizing
-  const HEX_SIZE = Math.min(35, Math.max(25, window.innerWidth / 25));
+  const HEX_SIZE = Math.min(35, Math.max(20, Math.min(window.innerWidth / 30, window.innerHeight / 20)));
   const hexWidth = HEX_SIZE * Math.sqrt(3);
   const hexHeight = HEX_SIZE * 1.5;
   const maxCols = 7;
   
-  const boardWidth = maxCols * hexWidth + 120;
-  const boardHeight = board.length * hexHeight + 120;
+  const boardWidth = Math.min(maxCols * hexWidth + 60, window.innerWidth - 40);
+  const boardHeight = Math.min(board.length * hexHeight + 60, window.innerHeight * 0.6);
 
   return (
-    <div className="bg-gradient-to-br from-green-800 to-green-900 p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto">
+    <div className="bg-gradient-to-br from-green-800 to-green-900 p-4 sm:p-6 lg:p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto">
       <div 
         className="relative mx-auto" 
         style={{ 
           width: `${boardWidth}px`, 
           height: `${boardHeight}px`,
-          minWidth: '400px',
-          minHeight: '300px',
+          minWidth: '280px',
+          minHeight: '200px',
           maxWidth: '100%'
         }}
       >

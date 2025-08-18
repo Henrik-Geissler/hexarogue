@@ -56,8 +56,8 @@ export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = []
 
   return (
     <TooltipProvider>
-      <div className="bg-gradient-to-br from-purple-800 to-purple-900 rounded-lg p-4 border border-purple-700">
-        <div className="grid grid-cols-7 gap-2">
+      <div className="bg-gradient-to-br from-purple-800 to-purple-900 rounded-lg p-3 sm:p-4 border border-purple-700">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {relictSlots.map((relict, index) => {
             const isAnimating = relict && animatingRelicts.includes(relict.id);
             const isBakerDozen = relict?.id === 'thirteenth-tile-double';
@@ -69,7 +69,7 @@ export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = []
                   <div
                     className={`
                       aspect-square rounded-md border-2 border-dashed border-purple-500/50 
-                      flex items-center justify-center text-2xl relative
+                      flex items-center justify-center text-lg sm:text-2xl relative
                       ${relict ? 'bg-purple-700/50 border-solid border-purple-400' : 'bg-purple-900/30'}
                       ${relict ? 'cursor-move hover:bg-purple-600/60' : ''}
                       ${isAnimating ? 'animate-pulse ring-2 ring-yellow-400 ring-opacity-75' : ''}
@@ -81,11 +81,11 @@ export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = []
                   >
                     {relict ? (
                       <div className="text-center">
-                        <div className={`text-xl ${isAnimating ? 'animate-bounce' : ''}`}>
+                        <div className={`text-base sm:text-xl ${isAnimating ? 'animate-bounce' : ''}`}>
                           {relict.icon}
                         </div>
                         {countdown !== null && (
-                          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-4 h-4 sm:w-5 sm:h-5 flex items-center justify-center font-bold">
                             {countdown}
                           </div>
                         )}
@@ -94,10 +94,10 @@ export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = []
                   </div>
                 </TooltipTrigger>
                 {relict && (
-                  <TooltipContent side="top" className="bg-purple-900 border border-purple-600 text-purple-100">
+                  <TooltipContent side="top" className="bg-purple-900 border border-purple-600 text-purple-100 max-w-48">
                     <div className="text-center">
-                      <div className="font-bold text-sm">{relict.name}</div>
-                      <div className="text-xs mt-1 max-w-48">
+                      <div className="font-bold text-xs sm:text-sm">{relict.name}</div>
+                      <div className="text-xs mt-1">
                         <BoldText text={relict.description} />
                       </div>
                     </div>

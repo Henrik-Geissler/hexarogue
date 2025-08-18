@@ -71,10 +71,10 @@ export function PlayerHand({
   });
 
   return (
-    <div className="bg-gradient-to-br from-blue-800 to-blue-900 p-6 rounded-xl shadow-2xl">
+    <div className="bg-gradient-to-br from-blue-800 to-blue-900 p-3 sm:p-4 lg:p-6 rounded-xl shadow-2xl">
 
       
-      <div className="flex flex-wrap gap-3 justify-center mb-4">
+      <div className="flex flex-wrap gap-2 sm:gap-3 justify-center mb-3 sm:mb-4">
         {hand.map(tile => {
           const isPlayable = playableCards.some(p => p.id === tile.id);
           const isSelected = selectedTiles.some(t => t.id === tile.id);
@@ -84,7 +84,7 @@ export function PlayerHand({
               key={tile.id}
               tile={tile}
               isHexagonal={true}
-              size={25}
+              size={20}
               isPlayable={isPlayable}
               isSelected={isSelected}
               onClick={() => handleTileClick(tile)}
@@ -101,7 +101,8 @@ export function PlayerHand({
             onClick={handleDiscardSelected}
             disabled={!canDiscard}
             variant="destructive"
-            className="bg-red-600 hover:bg-red-700"
+            size="sm"
+            className="bg-red-600 hover:bg-red-700 text-sm"
           >
             Discard Selected ({selectedTiles.length})
           </Button>

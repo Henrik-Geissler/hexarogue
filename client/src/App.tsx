@@ -44,10 +44,10 @@ function App() {
     return (
       <TooltipProvider>
         <>
-          <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 p-4">
-            <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-3 gap-8">
+          <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 p-2 sm:p-4 overflow-x-hidden">
+            <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
               {/* Left Column: Score and Deck */}
-              <div className="space-y-6 xl:order-1">
+              <div className="space-y-4 lg:space-y-6 order-2 lg:order-1">
                 <ScoreArea
                   stats={{
                     discards: gameState.discards,
@@ -62,7 +62,7 @@ function App() {
               </div>
 
               {/* Center Column: Game Board */}
-              <div className="flex items-center justify-center xl:order-2">
+              <div className="flex items-center justify-center order-1 lg:order-2">
                 <GameBoard
                   board={gameState.board}
                   draggedTile={gameState.draggedTile}
@@ -76,7 +76,7 @@ function App() {
               </div>
 
               {/* Right Column: Relicts and Player Hand */}
-              <div className="space-y-4 xl:order-3">
+              <div className="space-y-4 order-3">
                 <RelictSection
                   relicts={gameState.ownedRelicts}
                   onReorderRelicts={actions.reorderRelicts}
@@ -133,10 +133,10 @@ function App() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 p-4">
-        <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-3 gap-8">
+      <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 p-2 sm:p-4 overflow-x-hidden">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-4 lg:gap-8">
           {/* Left Column: Score and Deck */}
-          <div className="space-y-6 xl:order-1">
+          <div className="space-y-4 lg:space-y-6 order-2 lg:order-1">
             <ScoreArea
               stats={{
                 discards: gameState.discards,
@@ -151,7 +151,7 @@ function App() {
           </div>
 
           {/* Center Column: Game Board */}
-          <div className="flex items-center justify-center xl:order-2">
+          <div className="flex items-center justify-center order-1 lg:order-2">
             <GameBoard
               board={gameState.board}
               draggedTile={gameState.draggedTile}
@@ -165,7 +165,7 @@ function App() {
           </div>
 
           {/* Right Column: Relicts and Player Hand */}
-          <div className="space-y-4 xl:order-3">
+          <div className="space-y-4 order-3">
             <RelictSection
               relicts={gameState.ownedRelicts}
               onReorderRelicts={actions.reorderRelicts}

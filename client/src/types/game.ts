@@ -1,14 +1,19 @@
 import { AnimationState } from './animations';
 
-export type TileColor = 'red' | 'green' | 'blue' | 'yellow';
+export type TileColor = 'red' | 'green' | 'blue' | 'yellow' | 'orange' | 'lime' | 'cyan' | 'purple' | 'brown' | 'white';
 
 export interface Tile {
   id: string;
-  color: 'red' | 'green' | 'blue' | 'yellow';
   number: number;
+  color: TileColor;
   isGhost?: boolean;
   isUpgradeField?: boolean;
-  isBlock?: boolean; // New property to identify blocks
+  isBlock?: boolean;
+  mixedColor?: TileColor; // For tiles that have consumed other tiles
+  consumedTiles?: Tile[]; // Track consumed tiles for scoring
+  
+  // Color matching method - checks current color (including mixed colors)
+  matchesColor(targetColor: TileColor): boolean;
 }
 
 export interface BoardPosition {

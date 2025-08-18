@@ -32,6 +32,7 @@ import { colorFirstUpgradeRelict } from './colorFirstUpgrade';
 import { borderCopyRelict } from './borderCopy';
 import { ghostHandRelict } from './ghostHand';
 import { blueMirrorRelict } from './blueMirror';
+import { borderConsumeRelict } from './borderConsume';
 
 export const ALL_RELICTS: Relict[] = [
   alchemyRelict,
@@ -67,6 +68,7 @@ export const ALL_RELICTS: Relict[] = [
   borderCopyRelict,
   ghostHandRelict,
   blueMirrorRelict,
+  borderConsumeRelict,
 ];
 
 export function createInitialRelictPool(): Relict[] {
@@ -103,6 +105,7 @@ export function createInitialRelictPool(): Relict[] {
     colorFirstUpgradeRelict,
     borderCopyRelict,
     ghostHandRelict,
+    borderConsumeRelict,
   ];
 }
 

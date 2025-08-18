@@ -1,6 +1,7 @@
 import { Tile, TileColor, BoardPosition, GameState } from '../types/game';
 import { RelictManager } from './relictManager';
 import { TilePlacementContext } from '../types/relicts';
+import { mixColors } from './colorMixing';
 
 // Create initial deck of 36 tiles (1-9 in 4 colors)
 export function createInitialDeck(): Tile[] {
@@ -9,15 +10,28 @@ export function createInitialDeck(): Tile[] {
   
   for (const color of colors) {
     for (let number = 1; number <= 9; number++) {
-      deck.push({
-        id: `${color}-${number}-${Math.random()}`,
-        number,
-        color
-      });
+      deck.push(createTile(color, number));
     }
   }
   
   return shuffleDeck(deck);
+}
+
+// Create a tile with color matching method
+export function createTile(color: TileColor, number: number): Tile {
+  const baseTile = {
+    id: `${color}-${number}-${Math.random()}`,
+    number,
+    color
+  };
+
+  return {
+    ...baseTile,
+    matchesColor: function(targetColor: TileColor): boolean {
+      // Check current color (including mixed colors) and white tiles match any color
+      return this.color === targetColor || this.color === 'white';
+    }
+  };
 }
 
 // Shuffle deck using Fisher-Yates algorithm
@@ -146,7 +160,7 @@ export function canPlaceTile(
 
   // Check if all neighboring tiles either match color or share digits
   return validNeighbors.every(neighbor => {
-    return neighbor!.color === tile.color || numbersShareDigit(neighbor!.number, tile.number);
+    return neighbor!.matchesColor(tile.color) || numbersShareDigit(neighbor!.number, tile.number);
   });
 }
 
@@ -192,11 +206,14 @@ export function calculateBoardScore(board: (Tile | null)[][], ownedRelicts: any[
 }
 
 export function createBlock(): Tile {
+  // Blocks should be invisible and non-functional - they represent absence of a spot
   return {
-    id: `block-${Date.now()}-${Math.random()}`,
-    color: 'red', // Blocks can have any color, but they're not functional tiles
+    id: `block-${Math.random()}`,
     number: 0,
-    isBlock: true
+    color: 'red', // This color is never used since blocks are invisible
+    isBlock: true,
+    // Add the required color matching method but it should never be called
+    matchesColor: () => false
   };
 }
 
@@ -271,11 +288,13 @@ export function createEmptyBoard(): (Tile | null)[][] {
 
 // Get deck statistics
 export function getDeckStats(deck: Tile[]) {
-  const colorCounts = { red: 0, green: 0, blue: 0, yellow: 0 };
+  const colorCounts: Record<string, number> = { red: 0, green: 0, blue: 0, yellow: 0 };
   const numberCounts: Record<number, number> = {};
   
   deck.forEach(tile => {
-    colorCounts[tile.color]++;
+    if (colorCounts.hasOwnProperty(tile.color)) {
+      colorCounts[tile.color]++;
+    }
     numberCounts[tile.number] = (numberCounts[tile.number] || 0) + 1;
   });
   
@@ -304,13 +323,13 @@ export function findArea(
     let belongsToArea = false;
     switch (areaRule) {
       case 'color':
-        belongsToArea = tile.color === placedTile.color;
+        belongsToArea = tile.matchesColor(placedTile.color);
         break;
       case 'digit':
         belongsToArea = numbersShareDigit(tile.number, placedTile.number);
         break;
       case 'same-color':
-        belongsToArea = tile.color === placedTile.color;
+        belongsToArea = tile.matchesColor(placedTile.color);
         break;
     }
     
@@ -374,11 +393,155 @@ export function findBlueNeighbors(position: BoardPosition, board: (Tile | null)[
     if (newRow >= 0 && newRow < board.length && 
         newCol >= 0 && newCol < board[newRow].length) {
       const tile = board[newRow][newCol];
-      if (tile && tile.color === 'blue' && !tile.isBlock) {
+      if (tile && tile.matchesColor('blue') && !tile.isBlock) {
         blueNeighbors.push({ row: newRow, col: newCol });
       }
     }
   });
   
   return blueNeighbors;
+}
+
+// Calculate distance between two positions
+export function calculateDistance(pos1: BoardPosition, pos2: BoardPosition): number {
+  const dx = pos1.col - pos2.col;
+  const dy = pos1.row - pos2.row;
+  return Math.sqrt(dx * dx + dy * dy);
+}
+
+// Find tiles that can be consumed by a placed tile
+export function findConsumableTiles(
+  placedTile: Tile,
+  position: BoardPosition,
+  board: (Tile | null)[][]
+): { tile: Tile; position: BoardPosition; distance: number }[] {
+  const consumable: { tile: Tile; position: BoardPosition; distance: number }[] = [];
+  
+  // Check all tiles on the board
+  for (let row = 0; row < board.length; row++) {
+    for (let col = 0; col < board[row].length; col++) {
+      const tile = board[row][col];
+      // Ignore blocks, upgrade fields, and ghost tiles when consuming
+      if (tile && !tile.isBlock && !tile.isUpgradeField && !tile.isGhost) {
+        const tilePos = { row, col };
+        const distance = calculateDistance(position, tilePos);
+        
+        // Check if this tile can be consumed (same number or same color, but not the same tile)
+        if ((tile.number === placedTile.number || tile.matchesColor(placedTile.color)) && 
+            (tilePos.row !== position.row || tilePos.col !== position.col)) {
+          consumable.push({ tile, position: tilePos, distance });
+        }
+      }
+    }
+  }
+  
+  // Sort by distance (closest first)
+  return consumable.sort((a, b) => a.distance - b.distance);
+}
+
+// Consume tiles and return the updated consuming tile
+export function consumeTiles(
+  consumingTile: Tile,
+  consumableTiles: { tile: Tile; position: BoardPosition; distance: number }[]
+): { updatedTile: Tile; consumedPositions: BoardPosition[] } {
+  let updatedTile = { ...consumingTile };
+  const consumedPositions: BoardPosition[] = [];
+  const consumedTiles: Tile[] = [];
+  
+  for (const { tile, position } of consumableTiles) {
+    // Add the consumed tile's value to the consuming tile
+    updatedTile.number += tile.number;
+    
+    // Mix colors if the consumed tile has a different color
+    if (tile.color !== updatedTile.color) {
+      const mixedColor = mixColors(updatedTile.color, tile.color);
+      updatedTile.mixedColor = mixedColor;
+    }
+    
+    // Track consumed tiles
+    consumedTiles.push(tile);
+    consumedPositions.push(position);
+  }
+  
+  updatedTile.consumedTiles = consumedTiles;
+  
+  return { updatedTile, consumedPositions };
+}
+
+// Helper function to check if a position is on the border
+export function isBorderPosition(position: BoardPosition, board: (Tile | null)[][]): boolean {
+  const { row, col } = position;
+  
+  // Check if position is on the edge of the board
+  if (row === 0 || row === board.length - 1 || 
+      col === 0 || col === board[row].length - 1) {
+    return true;
+  }
+  
+  // Check if position is adjacent to a block
+  const neighbors = getNeighbors(position, board);
+  return neighbors.some(neighbor => neighbor?.isBlock);
+}
+
+// Helper function to check if this is the last border spot being filled
+export function isLastBorderSpot(position: BoardPosition, board: (Tile | null)[][]): boolean {
+  // Get all border positions
+  const borderPositions: BoardPosition[] = [];
+  
+  for (let row = 0; row < board.length; row++) {
+    for (let col = 0; col < board[row].length; col++) {
+      const pos = { row, col };
+      if (isBorderPosition(pos, board)) {
+        borderPositions.push(pos);
+      }
+    }
+  }
+  
+  // Check if this position is a border position and if it's the last empty one
+  if (!isBorderPosition(position, board)) {
+    return false;
+  }
+  
+  // Count how many border positions are empty (ignoring upgrade fields)
+  const emptyBorderPositions = borderPositions.filter(pos => {
+    const tile = board[pos.row][pos.col];
+    return tile === null || tile.isUpgradeField;
+  });
+  
+  // If this is the only empty border position, it's the last one
+  return emptyBorderPositions.length === 1 && 
+         emptyBorderPositions[0].row === position.row && 
+         emptyBorderPositions[0].col === position.col;
+}
+
+// Format tile number for display
+export function formatTileNumber(number: number): { text: string; fontSize: string; className?: string } {
+  if (number <= 999) {
+    // For numbers up to 999, just return the number
+    return { text: number.toString(), fontSize: 'text-sm sm:text-lg' };
+  } else if (number <= 999999) {
+    // For numbers 1000-999999, add space every 3 digits and reduce font size
+    const formatted = number.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return { text: formatted, fontSize: 'text-xs sm:text-base' };
+  } else if (number <= 999999999) {
+    // For numbers 1000000-999999999, format as "      1\n000 000" (right-aligned)
+    const millions = Math.floor(number / 1000000);
+    const remainder = number % 1000000;
+    const remainderFormatted = remainder.toString().padStart(6, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const text = `${' '.repeat(6)}${millions}\n${remainderFormatted}`;
+    return { text, fontSize: 'text-xs sm:text-sm', className: 'text-right leading-tight' };
+  } else if (number <= 999999999999) {
+    // For numbers 1000000000-999999999999, format as "      1\n000 000\n000 000" (right-aligned)
+    const billions = Math.floor(number / 1000000000);
+    const remainder = number % 1000000000;
+    const millions = Math.floor(remainder / 1000000);
+    const finalRemainder = remainder % 1000000;
+    const millionsFormatted = millions.toString().padStart(6, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const finalRemainderFormatted = finalRemainder.toString().padStart(6, '0').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    const text = `${' '.repeat(6)}${billions}\n${millionsFormatted}\n${finalRemainderFormatted}`;
+    return { text, fontSize: 'text-xs sm:text-sm', className: 'text-right leading-tight' };
+  } else {
+    // For numbers beyond the game's limit, show -1
+    return { text: '-1', fontSize: 'text-sm sm:text-lg' };
+  }
 }

@@ -26,7 +26,10 @@ export type AnimationType =
   | 'color-first-upgrade'
   | 'border-copy'
   | 'ghost-hand'
-  | 'blue-mirror';
+  | 'blue-mirror'
+  | 'consume'
+  | 'color-mixing'
+  | 'border-consume';
 
 export interface AnimationState {
   id: string;

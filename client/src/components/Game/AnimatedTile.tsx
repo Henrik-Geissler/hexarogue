@@ -261,6 +261,27 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
           setEffectText('');
         }, 800);
         break;
+      case 'consume':
+        setEffectText('🍽️');
+        setEffectColor('text-red-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 1000);
+        break;
+      case 'color-mixing':
+        setEffectText('🎨');
+        setEffectColor('text-purple-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 1200);
+        break;
+      case 'border-consume':
+        setEffectText('🌊');
+        setEffectColor('text-blue-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 1500);
+        break;
     }
   }, [positionAnimations, tile.number]);
 

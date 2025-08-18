@@ -7,7 +7,10 @@ import {
 	initializeNewRound,
 	createEmptyBoard,
 	findArea,
-	findBlueNeighbors
+	findBlueNeighbors,
+	findConsumableTiles,
+	consumeTiles,
+	isLastBorderSpot
 } from '../utils/gameLogic';
 import { RelictManager, getEmptyNeighborPositions } from '../utils/relictManager';
 import { createInitialRelictPool, getRelictSelection } from '../relicts';
@@ -280,26 +283,33 @@ export function useGameState() {
 							addAnimation('board-increment', position, 500);
 							if (effect.relictId) triggerRelictAnimation(effect.relictId, 500);
 							break;
-						case 'tile-stack':
-							addAnimation('tile-stack', position, 800);
-							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
-							// Handle tile stacking: add the number of the tile below and remove it
+						case 'consume':
+							addAnimation('consume', position, 1000);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 1000);
+							// Handle consume effect: consume the tile at the position
 							const targetTile = newBoard[position.row][position.col];
 							if (targetTile) {
+								// Add the consumed tile's value to the consuming tile
 								processedTile = {
 									...processedTile,
 									number: processedTile.number + targetTile.number
 								};
-								// Remove the tile below (it will be replaced by the new tile)
+								// Mix colors if the consumed tile has a different color
+								if (targetTile.color !== processedTile.color) {
+									const mixedColor = mixColors(processedTile.color, targetTile.color);
+									processedTile.mixedColor = mixedColor;
+								}
+								// Remove the consumed tile
 								newBoard[position.row][position.col] = null;
 							}
 							break;
+
 						case 'multiplying':
 							addAnimation('multiplying', position, 800, undefined, undefined, effect.multiplier);
 							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
 							// Multiply the round score for multiplying effects
 							if (effect.multiplier) {
-								newScore = newScore * effect.multiplier;
+								newScore = (newScore??0 )* effect.multiplier;
 							}
 							break;
 						case 'upgrading':
@@ -430,6 +440,16 @@ export function useGameState() {
 				}
 			}
 			
+			// Check for border consume effect
+			if (prev.ownedRelicts.some(relict => relict.id === 'border-consume')) {
+				// Check if this is the last border spot being filled
+				const isLastBorderSpotResult = isLastBorderSpot(position, boardAfterAreas);
+				if (isLastBorderSpotResult) {
+					addAnimation('border-consume', position, 1500);
+					triggerRelictAnimation('border-consume', 1500);
+				}
+			}
+			
 			// Spawn ghost tiles if needed
 			if (ghostPositions.length > 0) {
 				setTimeout(() => {
@@ -535,6 +555,9 @@ export function useGameState() {
 				addAnimation('color-first-upgrade', position, 800);
 				triggerRelictAnimation('color-first-upgrade', 800);
 			}
+			
+			// Actually place the processed tile on the board
+			finalBoard[position.row][position.col] = processedTile;
 			
 			return {
 				...prev,

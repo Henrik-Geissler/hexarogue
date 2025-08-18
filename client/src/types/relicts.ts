@@ -106,7 +106,7 @@ export interface RoundEndResult {
   vanishedTiles?: Tile[];
 }
 
-export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice' | 'discard-upgrade' | 'tile-copy' | 'number-prefix' | 'board-increment' | 'tile-stack' | 'auto-discard' | 'upgrade-field-spawn' | 'area-color-change' | 'area-upgrade' | 'digit-replace' | 'blue-trigger' | 'green-upgrade';
+export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice' | 'discard-upgrade' | 'tile-copy' | 'number-prefix' | 'board-increment' | 'tile-stack' | 'auto-discard' | 'upgrade-field-spawn' | 'area-color-change' | 'area-upgrade' | 'digit-replace' | 'blue-trigger' | 'green-upgrade' | 'consume';
 
 export interface RelictEffect {
   type: RelictEffectType;
