@@ -63,6 +63,11 @@ export interface RelictBehavior {
   onTargetScoreReached?: (tile: Tile, position: BoardPosition) => Tile;
   onDrawTile?: (tile: Tile) => Tile;
   onBoardIncrement?: (board: (Tile | null)[][]) => (Tile | null)[][];
+  onAfterDrawTile?: (hand: Tile[], board: (Tile | null)[][]) => Tile[];
+  onAfterPlaceTile?: (hand: Tile[], board: (Tile | null)[][]) => Tile[];
+  onEveryOtherTurn?: (board: (Tile | null)[][]) => (Tile | null)[][];
+  onAreaFormed?: (context: AreaContext) => (Tile | null)[][]; // New area-based behavior
+  onTileNumberChanged?: (tile: Tile) => Tile; // New method for when tile numbers change
 }
 
 export interface Relict {
@@ -91,11 +96,23 @@ export interface RoundEndResult {
   vanishedTiles?: Tile[];
 }
 
-export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice' | 'discard-upgrade' | 'tile-copy' | 'number-prefix' | 'board-increment' | 'tile-stack';
+export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn' | 'scoring-twice' | 'discard-upgrade' | 'tile-copy' | 'number-prefix' | 'board-increment' | 'tile-stack' | 'auto-discard' | 'upgrade-field-spawn' | 'area-color-change' | 'area-upgrade' | 'digit-replace' | 'blue-trigger' | 'green-upgrade';
 
 export interface RelictEffect {
   type: RelictEffectType;
   relictId?: string;
   multiplier?: number;
   position?: BoardPosition;
+  area?: Tile[]; // Add area to effects
+}
+
+// Area rule types
+export type AreaRule = 'color' | 'digit' | 'same-color';
+
+// Area context for relict behaviors
+export interface AreaContext {
+  placedTile: Tile;
+  area: Tile[];
+  areaRule: AreaRule;
+  board: (Tile | null)[][];
 }

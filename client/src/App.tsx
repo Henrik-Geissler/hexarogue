@@ -9,6 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle } from './components/ui/card';
 import { RelictSection } from './components/Game/RelictSection';
 import { RelictSelection } from './components/Game/RelictSelection';
 import { TooltipProvider } from './components/ui/tooltip';
+import { AnimatedCardDraw } from './components/Game/AnimatedCardDraw';
 
 function App() {
   const { gameState, actions } = useGameState();
@@ -68,6 +69,7 @@ function App() {
                   relicts={gameState.ownedRelicts}
                   onReorderRelicts={actions.reorderRelicts}
                   animatingRelicts={gameState.animatingRelicts}
+                  board={gameState.board}
                 />
                 <PlayerHand
                   hand={gameState.playerHand}
@@ -86,41 +88,6 @@ function App() {
             onSelectRelict={actions.selectRelict}
           />
         </>
-      </TooltipProvider>
-    );
-  }
-
-  if (gameState.gamePhase === 'won') {
-    return (
-      <TooltipProvider>
-        <div className="min-h-screen bg-gradient-to-br from-green-900 via-emerald-900 to-teal-900 flex items-center justify-center p-4">
-          <Card className="w-full max-w-md bg-black/20 backdrop-blur-sm border-white/20 text-white">
-            <CardHeader className="text-center">
-              <CardTitle className="text-3xl font-bold mb-2 text-green-400">🎉 You Won!</CardTitle>
-              <p className="text-gray-300">
-                Congratulations! You reached the target score of {gameState.targetScore}.
-              </p>
-              <p className="text-lg font-semibold mt-2">Final Score: {gameState.score}</p>
-            </CardHeader>
-            <CardContent className="text-center space-y-3">
-              <Button
-                onClick={actions.startNewRound}
-                size="lg"
-                className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600 w-full"
-              >
-                Next Round
-              </Button>
-              <Button
-                onClick={actions.startNewGame}
-                variant="outline"
-                size="lg"
-                className="w-full"
-              >
-                New Game
-              </Button>
-            </CardContent>
-          </Card>
-        </div>
       </TooltipProvider>
     );
   }
@@ -189,6 +156,7 @@ function App() {
               relicts={gameState.ownedRelicts}
               onReorderRelicts={actions.reorderRelicts}
               animatingRelicts={gameState.animatingRelicts}
+              board={gameState.board}
             />
             <PlayerHand
               hand={gameState.playerHand}
@@ -201,6 +169,23 @@ function App() {
             />
           </div>
         </div>
+        
+        {/* Drawing Animations */}
+        {gameState.drawingAnimations.map((animation) => (
+          <AnimatedCardDraw
+            key={animation.id}
+            tile={animation.tile}
+            fromPosition={animation.fromPosition}
+            toPosition={animation.toPosition}
+            delay={animation.delay}
+            onComplete={() => {
+              // Animation completed
+            }}
+            onGreenGrowth={() => {
+              // Trigger Green Growth animation
+            }}
+          />
+        ))}
       </div>
     </TooltipProvider>
   );

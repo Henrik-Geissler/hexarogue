@@ -1,11 +1,13 @@
 import React from 'react';
 import { Relict } from '../../types/relicts';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
+import { getBakerDozenCountdown } from '../../relicts/thirteenthTile';
 
 interface RelictSectionProps {
   relicts: Relict[];
   onReorderRelicts: (newOrder: Relict[]) => void;
   animatingRelicts?: string[];
+  board?: (any | null)[][]; // Add board prop for countdown
 }
 
 // Component to render text with bold formatting
@@ -24,7 +26,7 @@ function BoldText({ text }: { text: string }) {
   );
 }
 
-export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = [] }: RelictSectionProps) {
+export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = [], board }: RelictSectionProps) {
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData('text/plain', index.toString());
   };
@@ -54,6 +56,8 @@ export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = []
         <div className="grid grid-cols-7 gap-2">
           {relictSlots.map((relict, index) => {
             const isAnimating = relict && animatingRelicts.includes(relict.id);
+            const isBakerDozen = relict?.id === 'thirteenth-tile-double';
+            const countdown = isBakerDozen && board ? getBakerDozenCountdown(board) : null;
             
             return (
               <Tooltip key={index} delayDuration={0}>
@@ -76,6 +80,11 @@ export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = []
                         <div className={`text-xl ${isAnimating ? 'animate-bounce' : ''}`}>
                           {relict.icon}
                         </div>
+                        {countdown !== null && (
+                          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                            {countdown}
+                          </div>
+                        )}
                       </div>
                     ) : null}
                   </div>

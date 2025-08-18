@@ -7,6 +7,7 @@ export interface Tile {
   number: number;
   color: TileColor;
   isGhost?: boolean;
+  isUpgradeField?: boolean; // New field for upgrade fields
 }
 
 export interface BoardPosition {
@@ -25,15 +26,23 @@ export interface GameState {
   score: number;
   targetScore: number;
   round: number;
-  gamePhase: GamePhase;
+  gamePhase: 'ready' | 'playing' | 'won' | 'lost' | 'relict-selection';
   draggedTile: Tile | null;
   hoveredPosition: BoardPosition | null;
   ownedRelicts: any[];
   availableRelicts: any[];
   relictSelectionOptions: any[];
-  animations: AnimationState[];
+  animations: any[];
   isAnimating: boolean;
   animatingRelicts: string[];
+  drawingAnimations: Array<{
+    id: string;
+    tile: Tile;
+    fromPosition: { x: number; y: number };
+    toPosition: { x: number; y: number };
+    delay: number;
+  }>;
+  turnCount: number; // Add turn counter
 }
 
 export interface GameStats {

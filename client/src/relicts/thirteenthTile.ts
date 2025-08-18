@@ -29,3 +29,9 @@ export const thirteenthTileRelict: Relict = {
   description: 'The **13th tile** you play each round **doubles**',
   behavior: thirteenthTileBehavior,
 };
+
+// Helper function to get countdown for Baker's Dozen
+export function getBakerDozenCountdown(board: (any | null)[][]): number {
+  const tilesOnBoard = board.flat().filter(tile => tile !== null).length;
+  return Math.max(0, 13 - tilesOnBoard);
+}

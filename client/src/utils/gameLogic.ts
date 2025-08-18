@@ -80,12 +80,13 @@ export function canPlaceTileBasic(
 ): boolean {
   const { row, col } = position;
   
-  // Check if position is within bounds and empty
+  // Check if position is within bounds and empty or is an upgrade field
   if (row < 0 || row >= board.length || col < 0 || col >= board[row].length) {
     return false;
   }
   
-  if (board[row][col] !== null) {
+  const targetTile = board[row][col];
+  if (targetTile !== null && !targetTile.isUpgradeField) {
     return false;
   }
   
@@ -172,7 +173,8 @@ export function initializeNewRound(currentRound: number, allTiles: Tile[]): Part
     discards: 4,
     score: 0,
     targetScore: 30 + currentRound * (currentRound+5),
-    gamePhase: 'playing'
+    gamePhase: 'playing',
+    turnCount: 0 // Reset turn counter for new round
   };
 }
 
@@ -199,4 +201,77 @@ export function getDeckStats(deck: Tile[]) {
   });
   
   return { colorCounts, numberCounts, total: deck.length };
+}
+
+// Area detection functions
+export function findArea(
+  startPosition: BoardPosition,
+  board: (Tile | null)[][],
+  areaRule: 'color' | 'digit' | 'same-color',
+  placedTile: Tile
+): Tile[] {
+  const visited = new Set<string>();
+  const area: Tile[] = [];
+  
+  function dfs(position: BoardPosition) {
+    const key = `${position.row},${position.col}`;
+    if (visited.has(key)) return;
+    
+    visited.add(key);
+    const tile = board[position.row]?.[position.col];
+    if (!tile || tile.isUpgradeField) return;
+    
+    // Check if tile belongs to the area based on rule
+    let belongsToArea = false;
+    switch (areaRule) {
+      case 'color':
+        belongsToArea = tile.color === placedTile.color;
+        break;
+      case 'digit':
+        belongsToArea = numbersShareDigit(tile.number, placedTile.number);
+        break;
+      case 'same-color':
+        belongsToArea = tile.color === placedTile.color;
+        break;
+    }
+    
+    if (!belongsToArea) return;
+    
+    area.push(tile);
+    
+    // Get neighbors and continue DFS
+    const neighbors = getNeighbors(position, board);
+    for (let i = 0; i < neighbors.length; i++) {
+      if (neighbors[i]) {
+        const neighborPos = getNeighborPosition(position, i);
+        if (neighborPos) {
+          dfs(neighborPos);
+        }
+      }
+    }
+  }
+  
+  dfs(startPosition);
+  return area;
+}
+
+// Helper function to get neighbor position by index
+function getNeighborPosition(position: BoardPosition, neighborIndex: number): BoardPosition | null {
+  const { row, col } = position;
+  const isEvenRow = row % 2 === 0;
+  
+  const neighborOffsets = isEvenRow 
+    ? [
+        [0, -1], [0, 1],     // left, right
+        [-1, -1], [-1, 0],   // upper-left, upper-right
+        [1, -1], [1, 0]      // lower-left, lower-right
+      ]
+    : [
+        [0, -1], [0, 1],     // left, right  
+        [-1, 0], [-1, 1],    // upper-left, upper-right
+        [1, 0], [1, 1]       // lower-left, lower-right
+      ];
+  
+  const [rowOffset, colOffset] = neighborOffsets[neighborIndex];
+  return { row: row + rowOffset, col: col + colOffset };
 }

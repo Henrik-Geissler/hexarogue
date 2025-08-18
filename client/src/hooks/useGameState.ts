@@ -5,7 +5,8 @@ import {
 	canPlaceTile,
 	hasPlayableCards,
 	initializeNewRound,
-	createEmptyBoard
+	createEmptyBoard,
+	findArea
 } from '../utils/gameLogic';
 import { RelictManager, getEmptyNeighborPositions } from '../utils/relictManager';
 import { createInitialRelictPool, getRelictSelection } from '../relicts';
@@ -31,7 +32,9 @@ export function useGameState() {
 		relictSelectionOptions: [],
 		animations: [],
 		isAnimating: false,
-		animatingRelicts: []
+		animatingRelicts: [],
+		drawingAnimations: [],
+		turnCount: 0 // Add turn counter for upgrade field spawning
 	}));
 
 	// Create relict manager instance
@@ -114,6 +117,34 @@ export function useGameState() {
 		}, duration);
 	}, []);
 
+	// Helper function to add drawing animation
+	const addDrawingAnimation = useCallback((tile: Tile, fromPosition: { x: number; y: number }, toPosition: { x: number; y: number }, delay: number) => {
+		const animationId = `draw-${Date.now()}-${Math.random()}`;
+		setGameState(prev => ({
+			...prev,
+			drawingAnimations: [...prev.drawingAnimations, {
+				id: animationId,
+				tile,
+				fromPosition,
+				toPosition,
+				delay
+			}]
+		}));
+
+		// Remove animation after completion
+		setTimeout(() => {
+			setGameState(prev => ({
+				...prev,
+				drawingAnimations: prev.drawingAnimations.filter(anim => anim.id !== animationId)
+			}));
+		}, delay + 800);
+	}, []);
+
+	// Helper function to trigger Green Growth animation
+	const triggerGreenGrowth = useCallback(() => {
+		triggerRelictAnimation('green-prefix', 600);
+	}, [triggerRelictAnimation]);
+
 	// Place a tile on the board with enhanced animations
 	const placeTile = useCallback(async (tile: Tile, position: BoardPosition) => {
 		const isFirstTile = gameState.board.every(row => row.every(cell => cell === null));
@@ -160,6 +191,14 @@ export function useGameState() {
 			let ghostPositions: BoardPosition[] = [];
 			let processedTile = { ...initialProcessedTile }; // Make mutable for tile stacking
 
+			// Process tile number changes (for digit replacement relict)
+			const originalNumber = processedTile.number;
+			processedTile = relictManager.processTileNumberChanged(processedTile);
+			if (processedTile.number !== originalNumber) {
+				addAnimation('digit-replace', position, 600);
+				triggerRelictAnimation('digit-replace', 600);
+			}
+
 			// Add Color Variety doubling effect if applicable (only if player owns the relict)
 			const hasColorVarietyRelict = prev.ownedRelicts.some(relict => relict.id === 'color-variety-double');
 			if (hasColorVarietyRelict && hasColorVariety) {
@@ -176,6 +215,11 @@ export function useGameState() {
 							addAnimation('doubling', position, 800);
 							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
 							doublingCount++;
+							// Make doubling permanent by modifying the tile's number
+							processedTile = {
+								...processedTile,
+								number: processedTile.number * 2
+							};
 							break;
 						case 'scoring-twice':
 							addAnimation('scoring-twice', position, 800);
@@ -292,6 +336,56 @@ export function useGameState() {
 			// Process board increment effects
 			const boardAfterIncrement = relictManager.processBoardIncrement(newBoard);
 			
+			// Check if tile was placed on an upgrade field
+			const targetTile = prev.board[position.row][position.col];
+			if (targetTile && targetTile.isUpgradeField) {
+				// Upgrade the tile before scoring
+				processedTile = {
+					...processedTile,
+					number: processedTile.number + 1
+				};
+				addAnimation('upgrading', position, 600);
+				triggerRelictAnimation('upgrade-field-spawn', 600);
+			}
+			
+			// Detect and process areas
+			const colorArea = findArea(position, boardAfterIncrement, 'color', processedTile);
+			const digitArea = findArea(position, boardAfterIncrement, 'digit', processedTile);
+			const sameColorArea = findArea(position, boardAfterIncrement, 'same-color', processedTile);
+			
+			// Process area effects
+			let boardAfterAreas = boardAfterIncrement;
+			
+			// Process color area effects
+			if (colorArea.length > 1) { // More than just the placed tile
+				boardAfterAreas = relictManager.processAreaFormed(processedTile, colorArea, 'color', boardAfterAreas);
+				// Trigger area color change animation if any tiles changed color
+				if (JSON.stringify(boardAfterAreas) !== JSON.stringify(boardAfterIncrement)) {
+					addAnimation('area-color-change', position, 800);
+					triggerRelictAnimation('area-color-change', 800);
+				}
+			}
+			
+			// Process digit area effects
+			if (digitArea.length > 1) { // More than just the placed tile
+				boardAfterAreas = relictManager.processAreaFormed(processedTile, digitArea, 'digit', boardAfterAreas);
+				// Trigger area color change animation if any tiles changed color
+				if (JSON.stringify(boardAfterAreas) !== JSON.stringify(boardAfterIncrement)) {
+					addAnimation('area-color-change', position, 800);
+					triggerRelictAnimation('area-color-change', 800);
+				}
+			}
+			
+			// Process same color area effects
+			if (sameColorArea.length > 1) { // More than just the placed tile
+				boardAfterAreas = relictManager.processAreaFormed(processedTile, sameColorArea, 'same-color', boardAfterAreas);
+				// Trigger area upgrade animation if any tiles were upgraded
+				if (JSON.stringify(boardAfterAreas) !== JSON.stringify(boardAfterIncrement)) {
+					addAnimation('area-upgrade', position, 800);
+					triggerRelictAnimation('area-upgrade', 800);
+				}
+			}
+			
 			// Spawn ghost tiles if needed
 			if (ghostPositions.length > 0) {
 				setTimeout(() => {
@@ -317,14 +411,79 @@ export function useGameState() {
 			
 			// Process drawn cards through relict effects
 			const processedDrawnCards = drawnCards.map(tile => relictManager.processDrawTile(tile));
-			newHand = [...newHand, ...processedDrawnCards];
+			
+			// Check for special drawing effects
+			processedDrawnCards.forEach((tile, index) => {
+				// Check for blue trigger relict
+				if (tile.color === 'blue' && prev.ownedRelicts.some(relict => relict.id === 'blue-trigger')) {
+					// Trigger the blue tile (this would need more complex logic for hand neighbors)
+					addAnimation('blue-trigger', position, 700);
+					triggerRelictAnimation('blue-trigger', 700);
+				}
+				
+				// Check for green upgrade relict
+				if (tile.color === 'green' && prev.ownedRelicts.some(relict => relict.id === 'green-upgrade')) {
+					// Upgrade all green tiles on the board
+					addAnimation('green-upgrade', position, 700);
+					triggerRelictAnimation('green-upgrade', 700);
+					
+					// Apply the upgrade to all green tiles on the board
+					setTimeout(() => {
+						setGameState(prev => {
+							const newBoard = prev.board.map(row => 
+								row.map(tile => 
+									tile && tile.color === 'green' 
+										? { ...tile, number: tile.number + 1 }
+										: tile
+								)
+							);
+							return { ...prev, board: newBoard };
+						});
+					}, 700);
+				}
+			});
+			
+			// Add drawing animations for each card
+			processedDrawnCards.forEach((tile, index) => {
+				// Calculate positions (this would need to be more sophisticated in practice)
+				const fromPosition = { x: 100, y: 100 }; // Deck position
+				const toPosition = { x: 200 + index * 50, y: 500 }; // Hand position
+				const delay = index * 200; // Stagger the animations
+				
+				addDrawingAnimation(tile, fromPosition, toPosition, delay);
+			});
+			
+			// Update hand after animation completes
+			setTimeout(() => {
+				setGameState(prev => {
+					const updatedHand = [...newHand, ...processedDrawnCards];
+					
+					// Process auto-discard after drawing
+					const handAfterAutoDiscard = relictManager.processAfterDrawTile(updatedHand, boardAfterIncrement);
+					
+					return {
+						...prev,
+						playerHand: handAfterAutoDiscard
+					};
+				});
+			}, processedDrawnCards.length * 200 + 800); // Wait for all animations to complete
+			
+			// Process auto-discard after placement
+			const handAfterPlacement = relictManager.processAfterPlaceTile(newHand, boardAfterIncrement);
+			
+			// Check if we should spawn upgrade fields (every other turn)
+			let finalBoard = boardAfterAreas;
+			if ((prev.turnCount + 1) % 2 === 0) {
+				finalBoard = relictManager.processEveryOtherTurn(boardAfterAreas);
+			}
 			
 			return {
 				...prev,
-				board: boardAfterIncrement,
-				playerHand: newHand,
+				board: finalBoard,
+				playerHand: handAfterPlacement, // Apply auto-discard
 				deck: newDeck,
-				score: newScore
+				score: newScore,
+				turnCount: prev.turnCount + 1 // Increment turn counter
 			};
 		});
 
@@ -340,10 +499,45 @@ export function useGameState() {
 		// Clear animating state
 		setGameState(prev => ({ ...prev, isAnimating: false }));
 		
-		// Check win condition after turn is complete
+		// Check if target score was reached and go to relict selection instead of won screen
 		setGameState(prev => {
 			if (prev.score >= prev.targetScore) {
-				return { ...prev, gamePhase: 'won' };
+				// Process round end effects first (like vanished tiles, etc.)
+				const currentRelictManager = new RelictManager(prev.ownedRelicts);
+				const { board: boardAfterEffects, vanishedTiles } = currentRelictManager.processRoundEnd(prev.board, prev.round);
+				
+				// Collect all tiles for new round (including vanished tiles)
+				const allTiles = [
+					...prev.deck,
+					...prev.playerHand,
+					...prev.discardPile,
+					...boardAfterEffects.flat().filter(tile => tile !== null) as Tile[],
+					...vanishedTiles
+				];
+				
+				// Initialize new round state
+				const newRoundState = initializeNewRound(prev.round + 1, allTiles);
+				
+				// Check if we should show relict selection
+				const relictOptions = getRelictSelection(prev.availableRelicts);
+				
+				if (relictOptions.length > 0) {
+					return { 
+						...prev,
+						...newRoundState,
+						round: prev.round + 1,
+						gamePhase: 'relict-selection',
+						relictSelectionOptions: relictOptions
+					};
+				} else {
+					// If no relicts available, start new round
+					return { 
+						...prev,
+						...newRoundState,
+						round: prev.round + 1,
+						gamePhase: 'playing'
+					};
+				}
 			}
 			return prev;
 		});
@@ -376,6 +570,35 @@ export function useGameState() {
 			
 			// Process drawn cards through relict effects
 			const processedDrawnCards = drawnCards.map(tile => relictManager.processDrawTile(tile));
+			
+			// Check for special drawing effects in discard
+			processedDrawnCards.forEach((tile, index) => {
+				// Check for blue trigger relict
+				if (tile.color === 'blue' && prev.ownedRelicts.some(relict => relict.id === 'blue-trigger')) {
+					// Trigger the blue tile (this would need more complex logic for hand neighbors)
+					triggerRelictAnimation('blue-trigger', 700);
+				}
+				
+				// Check for green upgrade relict
+				if (tile.color === 'green' && prev.ownedRelicts.some(relict => relict.id === 'green-upgrade')) {
+					// Upgrade all green tiles on the board
+					triggerRelictAnimation('green-upgrade', 700);
+					
+					// Apply the upgrade to all green tiles on the board
+					setTimeout(() => {
+						setGameState(prev => {
+							const newBoard = prev.board.map(row => 
+								row.map(tile => 
+									tile && tile.color === 'green' 
+										? { ...tile, number: tile.number + 1 }
+										: tile
+								)
+							);
+							return { ...prev, board: newBoard };
+						});
+					}, 700);
+				}
+			});
 			
 			return {
 				...prev,

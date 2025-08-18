@@ -1,4 +1,4 @@
-export type AnimationType = 
+export type AnimationType =
   | 'placing-starts'
   | 'relict-trigger'
   | 'score-popup'
@@ -13,7 +13,14 @@ export type AnimationType =
   | 'tile-copy'
   | 'number-prefix'
   | 'board-increment'
-  | 'tile-stack';
+  | 'tile-stack'
+  | 'auto-discard'
+  | 'upgrade-field-spawn'
+  | 'area-color-change'
+  | 'area-upgrade'
+  | 'digit-replace'
+  | 'blue-trigger'
+  | 'green-upgrade';
 
 export interface AnimationState {
   id: string;

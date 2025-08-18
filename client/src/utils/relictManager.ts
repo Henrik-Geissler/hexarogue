@@ -313,13 +313,79 @@ export class RelictManager {
   // Process board increment
   processBoardIncrement(board: (Tile | null)[][]): (Tile | null)[][] {
     let processedBoard = board.map(row => [...row]);
-    
+
     for (const relict of this.ownedRelicts) {
       if (relict.behavior.onBoardIncrement) {
         processedBoard = relict.behavior.onBoardIncrement(processedBoard);
       }
     }
-    
+
     return processedBoard;
+  }
+
+  // Process after draw tile (for auto-discard)
+  processAfterDrawTile(hand: Tile[], board: (Tile | null)[][]): Tile[] {
+    let processedHand = [...hand];
+
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onAfterDrawTile) {
+        processedHand = relict.behavior.onAfterDrawTile(processedHand, board);
+      }
+    }
+
+    return processedHand;
+  }
+
+  // Process after place tile (for auto-discard)
+  processAfterPlaceTile(hand: Tile[], board: (Tile | null)[][]): Tile[] {
+    let processedHand = [...hand];
+
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onAfterPlaceTile) {
+        processedHand = relict.behavior.onAfterPlaceTile(processedHand, board);
+      }
+    }
+
+    return processedHand;
+  }
+
+  // Process every other turn (for upgrade field spawn)
+  processEveryOtherTurn(board: (Tile | null)[][]): (Tile | null)[][] {
+    let processedBoard = board.map(row => [...row]);
+
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onEveryOtherTurn) {
+        processedBoard = relict.behavior.onEveryOtherTurn(processedBoard);
+      }
+    }
+
+    return processedBoard;
+  }
+
+  // Process area formation
+  processAreaFormed(placedTile: Tile, area: Tile[], areaRule: 'color' | 'digit' | 'same-color', board: (Tile | null)[][]): (Tile | null)[][] {
+    let processedBoard = board.map(row => [...row]);
+
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onAreaFormed) {
+        const context = { placedTile, area, areaRule, board: processedBoard };
+        processedBoard = relict.behavior.onAreaFormed(context);
+      }
+    }
+
+    return processedBoard;
+  }
+
+  // Process tile number changes
+  processTileNumberChanged(tile: Tile): Tile {
+    let processedTile = { ...tile };
+
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onTileNumberChanged) {
+        processedTile = relict.behavior.onTileNumberChanged(processedTile);
+      }
+    }
+
+    return processedTile;
   }
 }

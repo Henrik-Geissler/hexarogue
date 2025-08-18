@@ -3,6 +3,22 @@ import { Relict } from '../../types/relicts';
 import { Button } from '../ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 
+// Component to render text with bold formatting
+function BoldText({ text }: { text: string }) {
+  const parts = text.split(/(\*\*.*?\*\*)/g);
+  
+  return (
+    <>
+      {parts.map((part, index) => {
+        if (part.startsWith('**') && part.endsWith('**')) {
+          return <strong key={index}>{part.slice(2, -2)}</strong>;
+        }
+        return part;
+      })}
+    </>
+  );
+}
+
 interface RelictSelectionProps {
   availableRelicts: Relict[];
   onSelectRelict: (relict: Relict) => void;
@@ -31,7 +47,7 @@ export function RelictSelection({ availableRelicts, onSelectRelict }: RelictSele
                 </div>
                 
                 <p className="text-sm text-slate-300 mb-6 text-center min-h-[3rem]">
-                  {relict.description}
+                  <BoldText text={relict.description} />
                 </p>
                 
                 <Button

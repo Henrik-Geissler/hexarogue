@@ -18,6 +18,13 @@ import { thirteenthTileRelict } from './thirteenthTile';
 import { greenPrefixRelict } from './greenPrefix';
 import { boardIncrementRelict } from './boardIncrement';
 import { blueStackRelict } from './blueStack';
+import { autoDiscardRelict } from './autoDiscard';
+import { upgradeFieldRelict } from './upgradeField';
+import { areaColorChangeRelict } from './areaColorChange';
+import { areaUpgradeRelict } from './areaUpgrade';
+import { digitReplaceRelict } from './digitReplace';
+import { blueTriggerRelict } from './blueTrigger';
+import { greenUpgradeRelict } from './greenUpgrade';
 
 export const ALL_RELICTS: Relict[] = [
   boardUpgradeRelict,
@@ -39,6 +46,13 @@ export const ALL_RELICTS: Relict[] = [
   greenPrefixRelict,
   boardIncrementRelict,
   blueStackRelict,
+  autoDiscardRelict,
+  upgradeFieldRelict,
+  areaColorChangeRelict,
+  areaUpgradeRelict,
+  digitReplaceRelict,
+  blueTriggerRelict,
+  greenUpgradeRelict,
 ];
 
 export function createInitialRelictPool(): Relict[] {

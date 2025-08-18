@@ -27,6 +27,7 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
       setEffectText('');
       setIsPlacing(false);
       setIsVanishing(false);
+      setIsPlaced(false);
       return;
     }
 
@@ -39,7 +40,6 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
         setEffectText('⬇');
         setEffectColor('text-blue-400');
         setTimeout(() => {
-          setIsPlacing(false);
           setEffectText('');
         }, 500);
         break;
@@ -157,6 +157,62 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
           setEffectText('');
         }, 800);
         break;
+
+      case 'auto-discard':
+        setEffectText('🗑️');
+        setEffectColor('text-red-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 600);
+        break;
+
+      case 'upgrade-field-spawn':
+        setEffectText('🌱');
+        setEffectColor('text-purple-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'area-color-change':
+        setEffectText('🎨');
+        setEffectColor('text-pink-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'area-upgrade':
+        setEffectText('📈');
+        setEffectColor('text-green-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'digit-replace':
+        setEffectText('🎲');
+        setEffectColor('text-purple-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 600);
+        break;
+
+      case 'blue-trigger':
+        setEffectText('🔵');
+        setEffectColor('text-blue-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 700);
+        break;
+
+      case 'green-upgrade':
+        setEffectText('🌿');
+        setEffectColor('text-green-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 700);
+        break;
     }
   }, [positionAnimations, tile.number]);
 
@@ -190,9 +246,9 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
         isHexagonal={true}
         size={30}
         className={`
-          transition-all duration-300
-          ${isPlacing ? 'translate-y-[-8px]' : ''}
-          ${isPlaced ? 'translate-y-0' : ''}
+          transition-all duration-500 ease-out
+          ${isPlacing ? 'translate-y-[-8px] scale-105' : ''} // Short column effect
+          ${isPlaced ? 'translate-y-0 scale-100' : ''} // Return to normal when placed
         `}
       />
       

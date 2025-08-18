@@ -103,7 +103,7 @@ export function GameBoard({
                       tile={tile}
                       position={position}
                       animations={animations}
-                      className="w-full h-full"
+                      className="w-full h-full pointer-events-none" // Make placed tiles non-draggable
                     />
                   ) : null}
                   canAcceptTile={canAccept && !isAnimating}

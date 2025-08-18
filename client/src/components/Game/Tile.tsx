@@ -1,7 +1,6 @@
 import React from 'react';
-import { Tile as TileType } from '../../types/game';
+import { Tile as TileType, TileColor } from '../../types/game';
 import { cn } from '../../lib/utils';
-import { getHexPath } from '../../utils/hexLayout';
 
 interface TileProps {
   tile: TileType;
@@ -16,12 +15,26 @@ interface TileProps {
   className?: string;
 }
 
-const colorStyles = {
+const colorStyles: Record<TileColor, { fill: string; stroke: string; text: string }> = {
   red: { fill: '#ef4444', stroke: '#dc2626', text: 'white' },
   green: { fill: '#22c55e', stroke: '#16a34a', text: 'white' },
   blue: { fill: '#3b82f6', stroke: '#2563eb', text: 'white' },
   yellow: { fill: '#eab308', stroke: '#ca8a04', text: 'black' }
 };
+
+function getHexPath(size: number): string {
+  const points: string[] = [];
+  
+  for (let i = 0; i < 6; i++) {
+    // Add 30 degrees (π/6) to rotate the hexagon for flat-top orientation
+    const angle = (i * Math.PI) / 3 + Math.PI / 6;
+    const x = size * Math.cos(angle);
+    const y = size * Math.sin(angle);
+    points.push(`${x},${y}`);
+  }
+  
+  return `M ${points.join(' L ')} Z`;
+}
 
 export function Tile({ 
   tile, 
@@ -49,6 +62,7 @@ export function Tile({
           isDragging && "opacity-50 scale-95",
           !isPlayable && "opacity-70 cursor-not-allowed border-dashed",
           "hover:scale-105 active:scale-95",
+          tile.isUpgradeField && "animate-pulse",
           className
         )}
         style={{ width: size * 2, height: size * 2 }}
@@ -61,8 +75,8 @@ export function Tile({
         >
           <path
             d={getHexPath(size)}
-            fill={tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill}
-            stroke={tile.isGhost ? '#666' : colors.stroke}
+            fill={tile.isUpgradeField ? '#8b5cf6' : (tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill)}
+            stroke={tile.isUpgradeField ? '#7c3aed' : (tile.isGhost ? '#666' : colors.stroke)}
             strokeWidth="2"
             className={cn(
               "transition-all duration-200",
@@ -84,11 +98,11 @@ export function Tile({
         <div 
           className={cn(
             "absolute inset-0 flex items-center justify-center font-bold text-lg",
-            colors.text === 'white' ? 'text-white' : 'text-black',
+            tile.isUpgradeField ? 'text-white' : (colors.text === 'white' ? 'text-white' : 'text-black'),
             tile.isGhost && "opacity-80"
           )}
         >
-          {tile.number}
+          {tile.isUpgradeField ? '⬆' : tile.number}
         </div>
       </div>
     );
@@ -103,22 +117,23 @@ export function Tile({
       className={cn(
         "w-12 h-12 rounded-lg border-2 flex items-center justify-center cursor-pointer",
         "font-bold text-lg select-none transition-all duration-200",
-        `bg-[${colors.fill}] border-[${colors.stroke}]`,
-        colors.text === 'white' ? 'text-white' : 'text-black',
+        `bg-[${tile.isUpgradeField ? '#8b5cf6' : colors.fill}] border-[${tile.isUpgradeField ? '#7c3aed' : colors.stroke}]`,
+        tile.isUpgradeField ? 'text-white' : (colors.text === 'white' ? 'text-white' : 'text-black'),
         isDragging && "opacity-50 scale-95",
         !isPlayable && "opacity-70 cursor-not-allowed border-dashed",
         isSelected && "ring-2 ring-white ring-offset-2",
         "hover:scale-105 active:scale-95",
         tile.isGhost && "opacity-70",
+        tile.isUpgradeField && "animate-pulse",
         className
       )}
       style={{
-        backgroundColor: tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill,
-        borderColor: tile.isGhost ? '#666' : colors.stroke,
-        color: colors.text
+        backgroundColor: tile.isUpgradeField ? '#8b5cf6' : (tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill),
+        borderColor: tile.isUpgradeField ? '#7c3aed' : (tile.isGhost ? '#666' : colors.stroke),
+        color: tile.isUpgradeField ? 'white' : colors.text
       }}
     >
-      {tile.number}
+      {tile.isUpgradeField ? '⬆' : tile.number}
     </div>
   );
 }
