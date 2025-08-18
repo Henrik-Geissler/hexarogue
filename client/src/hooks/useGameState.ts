@@ -10,7 +10,8 @@ import {
 	findBlueNeighbors,
 	findConsumableTiles,
 	consumeTiles,
-	isLastBorderSpot
+	isLastBorderSpot,
+	upgradeTile
 } from '../utils/gameLogic';
 import { mixColors } from '../utils/colorMixing';
 import { RelictManager, getEmptyNeighborPositions } from '../utils/relictManager';
@@ -394,11 +395,9 @@ export function useGameState() {
 			// Check if tile was placed on an upgrade field
 			const targetTile = prev.board[position.row][position.col];
 			if (targetTile && targetTile.isUpgradeField) {
-				// Upgrade the tile before scoring
-				processedTile = {
-					...processedTile,
-					number: processedTile.number + 1
-				};
+				// Upgrade the tile before scoring using centralized upgrade
+				const { upgradedTile: finalTile, effect } = relictManager.upgradeTile(processedTile);
+				processedTile = finalTile;
 				addAnimation('upgrading', position, 600);
 				triggerRelictAnimation('upgrade-field-spawn', 600);
 			}
@@ -407,11 +406,14 @@ export function useGameState() {
 			const originalColor = tile.color;
 			const newColor = processedTile.mixedColor || processedTile.color;
 			if (originalColor !== newColor) {
-				const upgradedTile = relictManager.processTileColorChanged(processedTile, originalColor, newColor);
-				if (upgradedTile.number !== processedTile.number) {
-					processedTile = upgradedTile;
-					addAnimation('color-change-upgrade', position, 600);
-					triggerRelictAnimation('color-change-upgrade', 600);
+				const { upgradedTile, shouldUpgrade, relictId } = relictManager.processTileColorChanged(processedTile, originalColor, newColor);
+				processedTile = upgradedTile;
+				
+				if (shouldUpgrade) {
+					const { upgradedTile: finalTile, effect } = relictManager.upgradeTile(processedTile, relictId);
+					processedTile = finalTile;
+					addAnimation('upgrading', position, 600);
+					if (effect.relictId) triggerRelictAnimation(effect.relictId, 600);
 				}
 			}
 			
@@ -510,7 +512,7 @@ export function useGameState() {
 							const newBoard = prev.board.map(row => 
 								row.map(tile => 
 									tile && tile.matchesColor('green') 
-										? { ...tile, number: tile.number + 1 }
+										? upgradeTile(tile)
 										: tile
 								)
 							);
@@ -730,7 +732,7 @@ export function useGameState() {
 							const newBoard = prev.board.map(row => 
 								row.map(tile => 
 									tile && tile.matchesColor('green') 
-										? { ...tile, number: tile.number + 1 }
+										? upgradeTile(tile)
 										: tile
 								)
 							);

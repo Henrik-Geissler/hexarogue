@@ -8,10 +8,9 @@ export const colorChangeUpgradeRelict: Relict = {
   icon: '🎨⬆️',
   behavior: {
     onTileColorChanged: (tile: Tile, oldColor: TileColor, newColor: TileColor): Tile => {
-        return {
-          ...tile,
-          number: tile.number + 1
-        }; 
+      // Return the tile as-is - the upgrade will be handled centrally
+      // The relict manager will detect this and apply the upgrade
+      return upgradeTile(tile);
     }
   }
 };

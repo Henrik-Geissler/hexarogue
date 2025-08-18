@@ -1,4 +1,5 @@
 import { Relict, RelictBehavior, TilePlacementContext, TilePlacementResult, RelictEffectType } from '../types/relicts';
+import { upgradeTile } from '../utils/gameLogic';
 
 export const boardIncrementBehavior: RelictBehavior = {
   onBeforeTilePlacement: (context: TilePlacementContext): TilePlacementResult => {
@@ -21,7 +22,7 @@ export const boardIncrementBehavior: RelictBehavior = {
     // Increment all tiles on the board by 1
     return board.map(row => 
       row.map(tile => 
-        tile ? { ...tile, number: tile.number + 1 } : null
+        tile ? upgradeTile(tile) : null
       )
     );
   },

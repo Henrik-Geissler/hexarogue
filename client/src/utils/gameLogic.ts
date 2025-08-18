@@ -545,3 +545,14 @@ export function formatTileNumber(number: number): { text: string; fontSize: stri
     return { text: '-1', fontSize: 'text-sm sm:text-lg' };
   }
 }
+
+// Centralized upgrade function that increases the first digit
+export function upgradeTile(tile: Tile): Tile {
+  const str = tile.number.toString();
+  const firstDigit = parseInt(str[0]);
+  const upgraded = (firstDigit + 1).toString() + str.slice(1);
+  return {
+    ...tile,
+    number: parseInt(upgraded)
+  };
+}

@@ -1,5 +1,6 @@
 import { Relict, RelictBehavior, AreaContext } from '../types/relicts';
 import { Tile } from '../types/game';
+import { upgradeTile } from '../utils/gameLogic';
 
 export const areaUpgradeBehavior: RelictBehavior = {
   onAreaFormed: (context: AreaContext) => {
@@ -21,10 +22,7 @@ export const areaUpgradeBehavior: RelictBehavior = {
       for (let row = 0; row < board.length; row++) {
         for (let col = 0; col < board[row].length; col++) {
           if (board[row][col]?.id === tile.id) {
-            const newTile = {
-              ...tile,
-              number: tile.number + 1
-            };
+            const newTile = upgradeTile(tile);
             newBoard[row][col] = newTile;
             break;
           }

@@ -7,6 +7,7 @@ import {
   TilePlacementResult
 } from '../types/relicts';
 import type { Tile, BoardPosition } from '../types/game';
+import { upgradeTile as upgradeTileNumber } from './gameLogic';
 
 // Utility functions for relict behaviors
 export function isOnEdge(position: BoardPosition, board: (Tile | null)[][]): boolean {
@@ -109,13 +110,6 @@ export function getEmptyNeighborPositions(position: BoardPosition, board: (Tile 
   });
   
   return emptyPositions;
-}
-
-export function upgradeTile(number: number): number {
-  const str = number.toString();
-  const firstDigit = parseInt(str[0]);
-  const upgraded = (firstDigit + 1).toString() + str.slice(1);
-  return parseInt(upgraded);
 }
 
 // Relict Manager - handles calling all relict behaviors in order
@@ -451,15 +445,39 @@ export class RelictManager {
   }
 
   // Process tile color changes
-  processTileColorChanged(tile: Tile, oldColor: string, newColor: string): Tile {
+  processTileColorChanged(tile: Tile, oldColor: string, newColor: string): { upgradedTile: Tile; shouldUpgrade: boolean; relictId?: string } {
     let processedTile = { ...tile };
+    let shouldUpgrade = false;
+    let upgradeRelictId: string | undefined;
 
-      // Only upgrade if the color actually changed and is different
-      if (oldColor !== newColor) 
-    for (const relict of this.ownedRelicts)  
-      if (relict.behavior.onTileColorChanged)  
-        processedTile = relict.behavior.onTileColorChanged(processedTile, oldColor as any, newColor as any); 
+    // Only upgrade if the color actually changed and is different
+    if (oldColor !== newColor) {
+      for (const relict of this.ownedRelicts) {
+        if (relict.behavior.onTileColorChanged) {
+          const result = relict.behavior.onTileColorChanged(processedTile, oldColor as any, newColor as any);
+          // If the relict returns the same tile, it wants to upgrade
+          if (result === processedTile) {
+            shouldUpgrade = true;
+            upgradeRelictId = relict.id;
+          } else {
+            processedTile = result;
+          }
+        }
+      }
+    }
 
-    return processedTile;
+    return { upgradedTile: processedTile, shouldUpgrade, relictId: upgradeRelictId };
+  }
+
+  // Centralized upgrade method that handles upgrade logic and returns upgrade effect
+  upgradeTile(tile: Tile, relictId?: string): { upgradedTile: Tile; effect: RelictEffect } {
+    const upgradedTile = upgradeTileNumber(tile);
+    return {
+      upgradedTile,
+      effect: {
+        type: 'upgrading',
+        relictId
+      }
+    };
   }
 }

@@ -1,5 +1,6 @@
 import { Relict, RelictBehavior } from '../types/relicts';
 import { Tile } from '../types/game';
+import { upgradeTile } from '../utils/gameLogic';
 
 export const discardUpgradeBehavior: RelictBehavior = {
   onDiscardTiles: (tiles: Tile[]) => {
@@ -9,11 +10,8 @@ export const discardUpgradeBehavior: RelictBehavior = {
       const allSameColor = tiles.every(tile => tile.color === firstColor);
       
       if (allSameColor) {
-        // Upgrade all tiles (increase number by 1)
-        return tiles.map(tile => ({
-          ...tile,
-          number: tile.number + 1
-        }));
+        // Upgrade all tiles using centralized upgrade function
+        return tiles.map(tile => upgradeTile(tile));
       }
     }
     
