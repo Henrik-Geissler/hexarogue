@@ -1,8 +1,9 @@
 import React, { useState, useCallback } from 'react';
 import { Tile as TileType } from '../../types/game';
 import { Tile } from './Tile';
-import { hasPlayableCards } from '../../utils/gameLogic';
 import { Button } from '../ui/button';
+import { canPlaceTile } from '../../utils/gameLogic';
+import { RelictManager } from '../../utils/relictManager';
 
 interface PlayerHandProps {
   hand: TileType[];
@@ -11,6 +12,7 @@ interface PlayerHandProps {
   onDragStart: (tile: TileType) => void;
   onDragEnd: () => void;
   onDiscardTiles: (tiles: TileType[]) => void;
+  ownedRelicts: any[];
 }
 
 export function PlayerHand({ 
@@ -19,7 +21,8 @@ export function PlayerHand({
   canDiscard,
   onDragStart, 
   onDragEnd,
-  onDiscardTiles
+  onDiscardTiles,
+  ownedRelicts
 }: PlayerHandProps) {
   const [selectedTiles, setSelectedTiles] = useState<TileType[]>([]);
 
@@ -46,18 +49,21 @@ export function PlayerHand({
     e.dataTransfer.effectAllowed = 'move';
   }, [onDragStart]);
 
-  // Check which tiles are playable
+  // Check which tiles are actually playable
   const playableCards = hand.filter(tile => {
     const isFirstTile = board.every(row => row.every(cell => cell === null));
-    if (isFirstTile) return true;
+    if (isFirstTile) return true; // First tile can be placed anywhere
+    
+    // Create relict manager for this check
+    const relictManager = new RelictManager(ownedRelicts);
     
     // Check if tile can be placed anywhere on the board
     for (let row = 0; row < board.length; row++) {
       for (let col = 0; col < board[row].length; col++) {
         if (board[row][col] === null) {
-          // Simplified check - in real implementation would use canPlaceTile
-          const hasNeighbor = hasPlayableCards([tile], board);
-          if (hasNeighbor) return true;
+          if (canPlaceTile(tile, { row, col }, board, isFirstTile, relictManager)) {
+            return true;
+          }
         }
       }
     }

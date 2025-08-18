@@ -71,6 +71,7 @@ function App() {
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 onDiscardTiles={actions.discardTiles}
+                ownedRelicts={gameState.ownedRelicts}
               />
             </div>
           </div>
@@ -182,6 +183,7 @@ function App() {
             onDragStart={handleDragStart}
             onDragEnd={handleDragEnd}
             onDiscardTiles={actions.discardTiles}
+            ownedRelicts={gameState.ownedRelicts}
           />
         </div>
       </div>

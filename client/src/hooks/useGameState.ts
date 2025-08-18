@@ -85,7 +85,7 @@ export function useGameState() {
 	}, []);
 
 	// Place a tile on the board with relict effects
-	const placeTile = useCallback((tile: Tile, position: BoardPosition) => {
+	const placeTile = useCallback(async (tile: Tile, position: BoardPosition) => {
 		const isFirstTile = gameState.board.every(row => row.every(cell => cell === null));
 		const isFirstTileThisRound = gameState.board.every(row => row.every(cell => cell === null));
 		

@@ -11,6 +11,8 @@ export interface BoardPosition {
   col: number;
 }
 
+export type GamePhase = 'ready' | 'playing' | 'relict-selection' | 'won' | 'lost';
+
 export interface GameState {
   deck: Tile[];
   playerHand: Tile[];
@@ -20,13 +22,12 @@ export interface GameState {
   score: number;
   targetScore: number;
   round: number;
-  gamePhase: 'ready' | 'playing' | 'won' | 'lost' | 'relict-selection';
+  gamePhase: GamePhase;
   draggedTile: Tile | null;
   hoveredPosition: BoardPosition | null;
-  // Relicts
-  ownedRelicts: import('../types/relicts').Relict[];
-  availableRelicts: import('../types/relicts').Relict[];
-  relictSelectionOptions: import('../types/relicts').Relict[];
+  ownedRelicts: any[];
+  availableRelicts: any[];
+  relictSelectionOptions: any[];
 }
 
 export interface GameStats {

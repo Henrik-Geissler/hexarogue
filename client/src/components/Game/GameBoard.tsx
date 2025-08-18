@@ -9,7 +9,7 @@ interface GameBoardProps {
   board: (TileType | null)[][];
   draggedTile: TileType | null;
   hoveredPosition: BoardPosition | null;
-  onPlaceTile: (tile: TileType, position: BoardPosition) => boolean;
+  onPlaceTile: (tile: TileType, position: BoardPosition) => Promise<boolean>;
   onHoverPosition: (position: BoardPosition | null) => void;
   ownedRelicts: any[];
 }
@@ -24,10 +24,10 @@ export function GameBoard({
 }: GameBoardProps) {
   const isFirstTile = board.every(row => row.every(cell => cell === null));
 
-  const handleDrop = useCallback((e: React.DragEvent, position: BoardPosition) => {
+  const handleDrop = useCallback(async (e: React.DragEvent, position: BoardPosition) => {
     e.preventDefault();
     if (draggedTile) {
-      onPlaceTile(draggedTile, position);
+      await onPlaceTile(draggedTile, position);
     }
     onHoverPosition(null);
   }, [draggedTile, onPlaceTile, onHoverPosition]);
@@ -83,8 +83,8 @@ export function GameBoard({
                 key={`${rowIndex}-${colIndex}`}
                 className="absolute"
                 style={{
-                  left: `${x + 50}px`,
-                  top: `${y + 50}px`,
+                  left: `${x + 60}px`,
+                  top: `${y + 60}px`,
                   transform: 'translate(-50%, -50%)'
                 }}
               >
