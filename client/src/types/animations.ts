@@ -1,0 +1,23 @@
+export type AnimationType = 
+  | 'placing-starts'
+  | 'relict-trigger'
+  | 'score-popup'
+  | 'placing-done';
+
+export interface AnimationState {
+  id: string;
+  type: AnimationType;
+  position: { row: number; col: number };
+  relictId?: string;
+  scoreValue?: number;
+  duration: number;
+  startTime: number;
+  isActive: boolean;
+}
+
+export interface AnimationContext {
+  animations: AnimationState[];
+  addAnimation: (animation: Omit<AnimationState, 'id' | 'startTime' | 'isActive'>) => void;
+  removeAnimation: (id: string) => void;
+  clearAnimations: () => void;
+}

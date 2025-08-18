@@ -1,3 +1,5 @@
+import { AnimationState } from './animations';
+
 export type TileColor = 'red' | 'green' | 'blue' | 'yellow';
 
 export interface Tile {
@@ -28,6 +30,8 @@ export interface GameState {
   ownedRelicts: any[];
   availableRelicts: any[];
   relictSelectionOptions: any[];
+  animations: AnimationState[];
+  isAnimating: boolean;
 }
 
 export interface GameStats {

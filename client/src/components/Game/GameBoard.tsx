@@ -4,6 +4,8 @@ import { HexSpot } from './HexSpot';
 import { getHexPosition } from '../../utils/hexLayout';
 import { canPlaceTile } from '../../utils/gameLogic';
 import { RelictManager } from '../../utils/relictManager';
+import { AnimatedTile } from './AnimatedTile';
+import { AnimationState } from '../../types/animations';
 
 interface GameBoardProps {
   board: (TileType | null)[][];
@@ -12,6 +14,8 @@ interface GameBoardProps {
   onPlaceTile: (tile: TileType, position: BoardPosition) => Promise<boolean>;
   onHoverPosition: (position: BoardPosition | null) => void;
   ownedRelicts: any[];
+  animations: AnimationState[];
+  isAnimating: boolean;
 }
 
 export function GameBoard({ 
@@ -20,25 +24,29 @@ export function GameBoard({
   hoveredPosition,
   onPlaceTile,
   onHoverPosition,
-  ownedRelicts
+  ownedRelicts,
+  animations,
+  isAnimating
 }: GameBoardProps) {
   const isFirstTile = board.every(row => row.every(cell => cell === null));
 
   const handleDrop = useCallback(async (e: React.DragEvent, position: BoardPosition) => {
     e.preventDefault();
-    if (draggedTile) {
+    if (draggedTile && !isAnimating) {
       await onPlaceTile(draggedTile, position);
     }
     onHoverPosition(null);
-  }, [draggedTile, onPlaceTile, onHoverPosition]);
+  }, [draggedTile, onPlaceTile, onHoverPosition, isAnimating]);
 
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
   }, []);
 
   const handleDragEnter = useCallback((position: BoardPosition) => {
-    onHoverPosition(position);
-  }, [onHoverPosition]);
+    if (!isAnimating) {
+      onHoverPosition(position);
+    }
+  }, [onHoverPosition, isAnimating]);
 
   const handleDragLeave = useCallback(() => {
     // Small delay to prevent flickering when moving between hex spots
@@ -90,8 +98,15 @@ export function GameBoard({
               >
                 <HexSpot
                   position={position}
-                  tile={tile}
-                  canAcceptTile={canAccept}
+                  tile={tile ? (
+                    <AnimatedTile
+                      tile={tile}
+                      position={position}
+                      animations={animations}
+                      className="w-full h-full"
+                    />
+                  ) : null}
+                  canAcceptTile={canAccept && !isAnimating}
                   isHovered={isHovered}
                   onDrop={(e) => handleDrop(e, position)}
                   onDragOver={handleDragOver}

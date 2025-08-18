@@ -6,7 +6,7 @@ import { cn } from '../../lib/utils';
 
 interface HexSpotProps {
   position: BoardPosition;
-  tile: TileType | null;
+  tile: TileType | React.ReactElement | null;
   canAcceptTile: boolean;
   isHovered: boolean;
   onDrop: (e: React.DragEvent) => void;
@@ -38,13 +38,17 @@ export function HexSpot({
       onDragLeave={onDragLeave}
     >
       {tile ? (
-        // Show hexagonal tile when occupied
-        <Tile 
-          tile={tile} 
-          isHexagonal={true}
-          size={hexSize}
-          className="absolute inset-0"
-        />
+        // Show tile (either React element or Tile component)
+        React.isValidElement(tile) ? (
+          tile
+        ) : (
+          <Tile 
+            tile={tile as TileType} 
+            isHexagonal={true}
+            size={hexSize}
+            className="absolute inset-0"
+          />
+        )
       ) : (
         // Show empty hexagon spot when vacant
         <svg 

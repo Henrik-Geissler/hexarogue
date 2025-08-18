@@ -1,5 +1,6 @@
 import React from 'react';
 import { Relict } from '../../types/relicts';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '../ui/tooltip';
 
 interface RelictSectionProps {
   relicts: Relict[];
@@ -31,34 +32,43 @@ export function RelictSection({ relicts, onReorderRelicts }: RelictSectionProps)
   const relictSlots = Array.from({ length: 7 }, (_, index) => relicts[index] || null);
 
   return (
-    <div className="bg-gradient-to-br from-purple-800 to-purple-900 rounded-lg p-4 border border-purple-700">
-      <div className="grid grid-cols-7 gap-2">
-        {relictSlots.map((relict, index) => (
-          <div
-            key={index}
-            className={`
-              aspect-square rounded-md border-2 border-dashed border-purple-500/50 
-              flex items-center justify-center text-2xl relative
-              ${relict ? 'bg-purple-700/50 border-solid border-purple-400' : 'bg-purple-900/30'}
-              ${relict ? 'cursor-move hover:bg-purple-600/60' : ''}
-            `}
-            draggable={!!relict}
-            onDragStart={(e) => relict && handleDragStart(e, index)}
-            onDragOver={handleDragOver}
-            onDrop={(e) => handleDrop(e, index)}
-            title={relict?.description}
-          >
-            {relict ? (
-              <div className="text-center">
-                <div className="text-xl">{relict.icon}</div>
-                <div className="text-xs text-purple-200 absolute -bottom-1 left-0 right-0 truncate px-1">
-                  {relict.name}
+    <TooltipProvider>
+      <div className="bg-gradient-to-br from-purple-800 to-purple-900 rounded-lg p-4 border border-purple-700">
+        <div className="grid grid-cols-7 gap-2">
+          {relictSlots.map((relict, index) => (
+            <Tooltip key={index}>
+              <TooltipTrigger asChild>
+                <div
+                  className={`
+                    aspect-square rounded-md border-2 border-dashed border-purple-500/50 
+                    flex items-center justify-center text-2xl relative
+                    ${relict ? 'bg-purple-700/50 border-solid border-purple-400' : 'bg-purple-900/30'}
+                    ${relict ? 'cursor-move hover:bg-purple-600/60' : ''}
+                  `}
+                  draggable={!!relict}
+                  onDragStart={(e) => relict && handleDragStart(e, index)}
+                  onDragOver={handleDragOver}
+                  onDrop={(e) => handleDrop(e, index)}
+                >
+                  {relict ? (
+                    <div className="text-center">
+                      <div className="text-xl">{relict.icon}</div>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ) : null}
-          </div>
-        ))}
+              </TooltipTrigger>
+              {relict && (
+                <TooltipContent side="top" className="bg-purple-900 border border-purple-600 text-purple-100">
+                  <div className="text-center">
+                    <div className="font-bold text-sm">{relict.name}</div>
+                    <div className="text-xs mt-1 max-w-48">{relict.description}</div>
+                  </div>
+                </TooltipContent>
+              )}
+            </Tooltip>
+          ))}
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

@@ -9,8 +9,11 @@ import {
 } from '../utils/gameLogic';
 import { RelictManager } from '../utils/relictManager';
 import { createInitialRelictPool, getRelictSelection } from '../relicts';
+import { useAnimations } from './useAnimations';
 
 export function useGameState() {
+	const { animations, addAnimation, clearAnimations } = useAnimations();
+	
 	const [gameState, setGameState] = useState<GameState>(() => ({
 		deck: [],
 		playerHand: [],
@@ -25,7 +28,9 @@ export function useGameState() {
 		hoveredPosition: null,
 		ownedRelicts: [],
 		availableRelicts: createInitialRelictPool(),
-		relictSelectionOptions: []
+		relictSelectionOptions: [],
+		animations: [],
+		isAnimating: false
 	}));
 
 	// Create relict manager instance
@@ -84,7 +89,7 @@ export function useGameState() {
 		});
 	}, []);
 
-	// Place a tile on the board with relict effects
+	// Place a tile on the board with simple animations
 	const placeTile = useCallback(async (tile: Tile, position: BoardPosition) => {
 		const isFirstTile = gameState.board.every(row => row.every(cell => cell === null));
 		const isFirstTileThisRound = gameState.board.every(row => row.every(cell => cell === null));
@@ -94,6 +99,15 @@ export function useGameState() {
 		if (!canPlaceTile(tile, position, gameState.board, isFirstTile, currentRelictManager)) {
 			return false;
 		}
+
+		// Clear dragged tile immediately so it doesn't hang in the air
+		setGameState(prev => ({ ...prev, draggedTile: null, isAnimating: true }));
+
+		// Start placement animation
+		addAnimation('placing-starts', position, 500);
+
+		// Wait for placement animation
+		await new Promise(resolve => setTimeout(resolve, 500));
 
 		setGameState(prev => {
 			const relictManager = new RelictManager(prev.ownedRelicts);
@@ -110,6 +124,22 @@ export function useGameState() {
 			if (!canPlace) {
 				return prev; // Placement was prevented by a relict
 			}
+
+			// Check for relict triggers and add animations
+			if (isFirstTileThisRound && processedTile.number !== tile.number) {
+				// First Strike triggered
+				addAnimation('relict-trigger', position, 700, '⚡');
+			}
+
+			if (processedTile.color !== tile.color) {
+				// Alchemy or Edge Chaos triggered
+				const relictId = processedTile.color === 'red' ? '🔄' : '🌈';
+				addAnimation('relict-trigger', position, 700, relictId);
+			}
+
+			// Add scoring animation
+			const scoreValue = relictManager.calculateTileScore(processedTile, position, newBoard);
+			addAnimation('score-popup', position, 1000, undefined, scoreValue);
 			
 			let newHand = prev.playerHand.filter(handTile => handTile.id !== tile.id);
 			let newDeck = prev.deck;
@@ -134,13 +164,24 @@ export function useGameState() {
 				board: newBoard,
 				playerHand: newHand,
 				deck: newDeck,
-				score: newScore,
-				draggedTile: null
+				score: newScore
 			};
 		});
+
+		// Wait for animations to complete
+		await new Promise(resolve => setTimeout(resolve, 1000));
+
+		// Add placement done animation
+		addAnimation('placing-done', position, 300);
+
+		// Wait for final animation
+		await new Promise(resolve => setTimeout(resolve, 300));
+
+		// Clear animating state
+		setGameState(prev => ({ ...prev, isAnimating: false }));
 		
 		return true;
-	}, [gameState.board, gameState.playerHand, gameState.ownedRelicts]);
+	}, [gameState.board, gameState.playerHand, gameState.ownedRelicts, addAnimation]);
 
 	// Discard selected tiles
 	const discardTiles = useCallback((tilesToDiscard: Tile[]) => {
@@ -224,7 +265,7 @@ export function useGameState() {
 	}, []);
 
 	return {
-		gameState,
+		gameState: { ...gameState, animations },
 		actions: {
 			startNewGame,
 			startNewRound,
