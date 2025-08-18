@@ -1,11 +1,21 @@
-import { Relict, RelictBehavior, ScoringContext } from '../types/relicts';
+import { Relict, RelictBehavior, ScoringContext, TilePlacementContext, TilePlacementResult, RelictEffectType } from '../types/relicts';
 
 export const smallWondersBehavior: RelictBehavior = {
-  onTileScores: (context: ScoringContext) => {
+  onBeforeTilePlacement: (context: TilePlacementContext): TilePlacementResult => {
+    const effects = [];
     if (context.tile.number < 10) {
-      return context.baseScore * context.baseScore;
+      effects.push({
+        type: 'multiplying' as RelictEffectType,
+        relictId: 'small-number-multiply',
+        multiplier: context.tile.number
+      });
     }
-    return context.baseScore;
+    
+    return {
+      tile: context.tile,
+      canPlace: true,
+      effects
+    };
   },
 };
 
@@ -13,8 +23,7 @@ export const smallWondersRelict: Relict = {
   id: 'small-number-multiply',
   name: 'Small Wonders',
   icon: '🔢',
-  description: 'Tiles with numbers smaller than 10 multiply the score instead of adding',
-  type: 'small-number-multiply',
+  description: 'Tiles with numbers **smaller than 10** **multiply** the round score instead of adding',
   behavior: smallWondersBehavior,
 };
 

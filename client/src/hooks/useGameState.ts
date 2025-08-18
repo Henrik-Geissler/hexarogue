@@ -7,7 +7,7 @@ import {
 	initializeNewRound,
 	createEmptyBoard
 } from '../utils/gameLogic';
-import { RelictManager } from '../utils/relictManager';
+import { RelictManager, getEmptyNeighborPositions } from '../utils/relictManager';
 import { createInitialRelictPool, getRelictSelection } from '../relicts';
 import { useAnimations } from './useAnimations';
 
@@ -30,7 +30,8 @@ export function useGameState() {
 		availableRelicts: createInitialRelictPool(),
 		relictSelectionOptions: [],
 		animations: [],
-		isAnimating: false
+		isAnimating: false,
+		animatingRelicts: []
 	}));
 
 	// Create relict manager instance
@@ -89,7 +90,22 @@ export function useGameState() {
 		});
 	}, []);
 
-	// Place a tile on the board with simple animations
+	// Helper function to trigger relict animation
+	const triggerRelictAnimation = useCallback((relictId: string, duration: number = 1000) => {
+		setGameState(prev => ({
+			...prev,
+			animatingRelicts: [...prev.animatingRelicts, relictId]
+		}));
+
+		setTimeout(() => {
+			setGameState(prev => ({
+				...prev,
+				animatingRelicts: prev.animatingRelicts.filter(id => id !== relictId)
+			}));
+		}, duration);
+	}, []);
+
+	// Place a tile on the board with enhanced animations
 	const placeTile = useCallback(async (tile: Tile, position: BoardPosition) => {
 		const isFirstTile = gameState.board.every(row => row.every(cell => cell === null));
 		const isFirstTileThisRound = gameState.board.every(row => row.every(cell => cell === null));
@@ -112,8 +128,12 @@ export function useGameState() {
 		setGameState(prev => {
 			const relictManager = new RelictManager(prev.ownedRelicts);
 			
+			// Check for Color Variety relict (4 different colors in hand)
+			const colorsInHand = new Set(prev.playerHand.map(tile => tile.color));
+			const hasColorVariety = colorsInHand.size >= 4;
+			
 			// Process tile placement through relict manager
-			const { tile: processedTile, canPlace, board: newBoard } = relictManager.processTilePlacement(
+			const { tile: processedTile, canPlace, board: newBoard, effects } = relictManager.processTilePlacement(
 				tile, 
 				position, 
 				prev.board, 
@@ -125,21 +145,70 @@ export function useGameState() {
 				return prev; // Placement was prevented by a relict
 			}
 
-			// Check for relict triggers and add animations
-			if (isFirstTileThisRound && processedTile.number !== tile.number) {
-				// First Strike triggered
-				addAnimation('relict-trigger', position, 700, '⚡');
+			// Count doubling effects for cumulative scoring
+			let doublingCount = 0;
+			let ghostPositions: BoardPosition[] = [];
+
+			// Add Color Variety doubling effect if applicable (only if player owns the relict)
+			const hasColorVarietyRelict = prev.ownedRelicts.some(relict => relict.id === 'color-variety-double');
+			if (hasColorVarietyRelict && hasColorVariety) {
+				doublingCount++;
+				addAnimation('doubling', position, 800);
+				triggerRelictAnimation('color-variety-double', 800);
 			}
 
-			if (processedTile.color !== tile.color) {
-				// Alchemy or Edge Chaos triggered
-				const relictId = processedTile.color === 'red' ? '🔄' : '🌈';
-				addAnimation('relict-trigger', position, 700, relictId);
+			// Process effects and add animations
+			if (effects) {
+				effects.forEach(effect => {
+					switch (effect.type) {
+						case 'doubling':
+							addAnimation('doubling', position, 800);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
+							doublingCount++;
+							break;
+						case 'multiplying':
+							addAnimation('multiplying', position, 800, undefined, undefined, effect.multiplier);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
+							// Multiply the round score for multiplying effects
+							if (effect.multiplier) {
+								newScore = newScore * effect.multiplier;
+							}
+							break;
+						case 'upgrading':
+							addAnimation('upgrading', position, 600);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 600);
+							break;
+						case 'vanishing':
+							addAnimation('vanishing', position, 1000);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 1000);
+							// Remove the tile from the board after vanishing animation
+							setTimeout(() => {
+								setGameState(prev => {
+									const newBoard = prev.board.map(row => [...row]);
+									newBoard[position.row][position.col] = null;
+									return { ...prev, board: newBoard };
+								});
+							}, 1000);
+							break;
+						case 'ghost-spawn':
+							addAnimation('ghost-spawn', position, 800);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 800);
+							// Get empty neighbor positions for ghost spawning
+							const emptyPositions = getEmptyNeighborPositions(position, newBoard);
+							ghostPositions = emptyPositions.slice(0, effect.multiplier || 1);
+							break;
+						case 'relict-trigger':
+							addAnimation('relict-trigger', position, 700, effect.relictId);
+							if (effect.relictId) triggerRelictAnimation(effect.relictId, 700);
+							break;
+					}
+				});
 			}
 
-			// Add scoring animation
+			// Calculate cumulative scoring based on doubling count
 			const scoreValue = relictManager.calculateTileScore(processedTile, position, newBoard);
-			addAnimation('score-popup', position, 1000, undefined, scoreValue);
+			const totalScoreValue = scoreValue * Math.pow(2, doublingCount);
+			addAnimation('score-popup', position, 1000, undefined, totalScoreValue);
 			
 			let newHand = prev.playerHand.filter(handTile => handTile.id !== tile.id);
 			let newDeck = prev.deck;
@@ -149,8 +218,30 @@ export function useGameState() {
 			
 			// Calculate new score after placement (with retriggering)
 			let newScore = prev.score;
+			// Add the score for the newly placed tile (with retriggering)
 			for (let i = 0; i < retriggerCount; i++) {
-				newScore = relictManager.calculateBoardScore(newBoard);
+				newScore += relictManager.calculateTileScore(processedTile, position, newBoard);
+			}
+			
+			// Add cumulative doubling to the score
+			newScore += totalScoreValue - scoreValue;
+			
+			// Spawn ghost tiles if needed
+			if (ghostPositions.length > 0) {
+				setTimeout(() => {
+					setGameState(prev => {
+						const ghostBoard = prev.board.map(row => [...row]);
+						ghostPositions.forEach(ghostPos => {
+							const ghostTile: Tile = {
+								...processedTile,
+								id: `ghost-${Date.now()}-${Math.random()}`,
+								isGhost: true
+							};
+							ghostBoard[ghostPos.row][ghostPos.col] = ghostTile;
+						});
+						return { ...prev, board: ghostBoard };
+					});
+				}, 800);
 			}
 			
 			// Draw 1 card after each placement
@@ -180,8 +271,16 @@ export function useGameState() {
 		// Clear animating state
 		setGameState(prev => ({ ...prev, isAnimating: false }));
 		
+		// Check win condition after turn is complete
+		setGameState(prev => {
+			if (prev.score >= prev.targetScore) {
+				return { ...prev, gamePhase: 'won' };
+			}
+			return prev;
+		});
+		
 		return true;
-	}, [gameState.board, gameState.playerHand, gameState.ownedRelicts, addAnimation]);
+	}, [gameState.board, gameState.playerHand, gameState.ownedRelicts, addAnimation, triggerRelictAnimation]);
 
 	// Discard selected tiles
 	const discardTiles = useCallback((tilesToDiscard: Tile[]) => {
@@ -227,12 +326,6 @@ export function useGameState() {
 	useEffect(() => {
 		if (gameState.gamePhase !== 'playing') return;
 
-		// Check win condition
-		if (gameState.score >= gameState.targetScore) {
-			setGameState(prev => ({ ...prev, gamePhase: 'won' }));
-			return;
-		}
-
 		// Check lose conditions - only lose if no playable cards and no discards/deck
 		const hasDiscards = gameState.discards > 0;
 		const hasCardsInDeck = gameState.deck.length > 0;
@@ -242,8 +335,7 @@ export function useGameState() {
 		if (!canPlayCards && !hasDiscards && !hasCardsInDeck) {
 			setGameState(prev => ({ ...prev, gamePhase: 'lost' }));
 		}
-	}, [gameState.score, gameState.targetScore, gameState.discards, 
-		gameState.deck.length, gameState.playerHand, gameState.board, gameState.gamePhase, gameState.ownedRelicts]);
+	}, [gameState.discards, gameState.deck.length, gameState.playerHand, gameState.board, gameState.gamePhase, gameState.ownedRelicts]);
 
 	// Reorder relicts
 	const reorderRelicts = useCallback((newOrder: any[]) => {

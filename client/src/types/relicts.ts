@@ -43,22 +43,16 @@ export interface RoundEndContext {
 // Interface for relict behavior hooks
 export interface RelictBehavior {
   // Called before a tile is placed, can modify the tile or prevent placement
-  onBeforeTilePlacement?: (context: TilePlacementContext) => { 
-    tile: Tile; 
-    canPlace: boolean; 
-  };
+  onBeforeTilePlacement?: (context: TilePlacementContext) => TilePlacementResult;
   
   // Called when calculating score for a tile
   onTileScores?: (context: ScoringContext) => number;
   
   // Called after a tile is placed, can modify the board
-  onAfterTilePlacement?: (context: TilePlacementContext & { board: (Tile | null)[][] }) => (Tile | null)[][];
+  onAfterTilePlacement?: (context: TilePlacementContext) => (Tile | null)[][];
   
   // Called at the end of a round, can modify the board
-  onRoundEnd?: (context: RoundEndContext) => { 
-    board: (Tile | null)[][]; 
-    vanishedTiles?: Tile[]; 
-  };
+  onRoundEnd?: (context: RoundEndContext) => RoundEndResult;
   
   // Called when checking if a tile can be placed
   onCanPlaceTile?: (tile: Tile, position: BoardPosition, board: (Tile | null)[][], isFirstTile: boolean) => boolean;
@@ -70,11 +64,8 @@ export interface RelictBehavior {
 export interface Relict {
   id: string;
   name: string;
-  icon: string;
   description: string;
-  type: RelictType;
-  color?: 'red' | 'green' | 'blue' | 'yellow';
-  multiplier?: number;
+  icon: string;
   behavior: RelictBehavior;
 }
 
@@ -83,4 +74,24 @@ export interface RelictState {
   availableRelicts: Relict[];
   relictSelectionPhase: boolean;
   availableSelection: Relict[];
+}
+
+export interface TilePlacementResult {
+  tile: Tile;
+  canPlace: boolean;
+  effects?: RelictEffect[];
+}
+
+export interface RoundEndResult {
+  board: (Tile | null)[][];
+  vanishedTiles?: Tile[];
+}
+
+export type RelictEffectType = 'doubling' | 'multiplying' | 'upgrading' | 'vanishing' | 'relict-trigger' | 'ghost-spawn';
+
+export interface RelictEffect {
+  type: RelictEffectType;
+  relictId?: string;
+  multiplier?: number;
+  position?: BoardPosition;
 }

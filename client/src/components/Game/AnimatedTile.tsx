@@ -14,6 +14,8 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
   const [effectText, setEffectText] = useState<string>('');
   const [effectColor, setEffectColor] = useState<string>('');
   const [isPlacing, setIsPlacing] = useState(false);
+  const [isVanishing, setIsVanishing] = useState(false);
+  const [isPlaced, setIsPlaced] = useState(false);
 
   // Find active animations for this position
   const positionAnimations = animations.filter(
@@ -24,6 +26,7 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
     if (positionAnimations.length === 0) {
       setEffectText('');
       setIsPlacing(false);
+      setIsVanishing(false);
       return;
     }
 
@@ -32,6 +35,7 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
     switch (animation.type) {
       case 'placing-starts':
         setIsPlacing(true);
+        setIsPlaced(false);
         setEffectText('⬇');
         setEffectColor('text-blue-400');
         setTimeout(() => {
@@ -57,14 +61,79 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
         break;
 
       case 'placing-done':
-        setEffectText('✓');
-        setEffectColor('text-green-400');
+        setIsPlaced(true);
+        setEffectText('');
         setTimeout(() => {
           setEffectText('');
         }, 300);
         break;
+
+      case 'doubling':
+        setEffectText('×2');
+        setEffectColor('text-purple-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'multiplying':
+        setEffectText(`×${animation.multiplier || 2}`);
+        setEffectColor('text-purple-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
+
+      case 'upgrading':
+        setEffectText('⬆');
+        setEffectColor('text-yellow-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 600);
+        break;
+
+      case 'vanishing':
+        setIsVanishing(true);
+        setEffectText('💨');
+        setEffectColor('text-gray-400');
+        setTimeout(() => {
+          setEffectText('');
+          setIsVanishing(false);
+        }, 1000);
+        break;
+
+      case 'ghost-spawn':
+        setEffectText('👻');
+        setEffectColor('text-gray-300');
+        setTimeout(() => {
+          setEffectText('');
+        }, 800);
+        break;
     }
   }, [positionAnimations, tile.number]);
+
+  if (isVanishing) {
+    return (
+      <div className={`relative ${className} animate-pulse opacity-50`}>
+        <TileComponent
+          tile={tile}
+          isHexagonal={true}
+          size={30}
+          className="transition-all duration-1000 scale-75 opacity-50"
+        />
+        
+        {effectText && (
+          <div className={`
+            absolute -top-8 left-1/2 transform -translate-x-1/2
+            text-2xl font-bold animate-pulse pointer-events-none
+            ${effectColor}
+          `}>
+            {effectText}
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={`relative ${className}`}>
@@ -72,12 +141,16 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
         tile={tile}
         isHexagonal={true}
         size={30}
-        className={`${isPlacing ? 'animate-bounce' : ''} transition-all duration-300`}
+        className={`
+          transition-all duration-300
+          ${isPlacing ? 'translate-y-[-8px]' : ''}
+          ${isPlaced ? 'translate-y-0' : ''}
+        `}
       />
       
       {effectText && (
         <div className={`
-          absolute inset-0 flex items-center justify-center
+          absolute -top-8 left-1/2 transform -translate-x-1/2
           text-2xl font-bold animate-pulse pointer-events-none
           ${effectColor}
         `}>

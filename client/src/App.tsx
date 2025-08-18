@@ -67,6 +67,7 @@ function App() {
                 <RelictSection
                   relicts={gameState.ownedRelicts}
                   onReorderRelicts={actions.reorderRelicts}
+                  animatingRelicts={gameState.animatingRelicts}
                 />
                 <PlayerHand
                   hand={gameState.playerHand}
@@ -187,6 +188,7 @@ function App() {
             <RelictSection
               relicts={gameState.ownedRelicts}
               onReorderRelicts={actions.reorderRelicts}
+              animatingRelicts={gameState.animatingRelicts}
             />
             <PlayerHand
               hand={gameState.playerHand}

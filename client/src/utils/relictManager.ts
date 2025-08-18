@@ -2,7 +2,8 @@ import {
   Relict, 
   TilePlacementContext, 
   ScoringContext, 
-  RoundEndContext 
+  RoundEndContext,
+  RelictEffect
 } from '../types/relicts';
 import type { Tile, BoardPosition } from '../types/game';
 
@@ -57,6 +58,54 @@ export function countBlueNeighbors(position: BoardPosition, board: (Tile | null)
   return blueCount;
 }
 
+export function countEmptyNeighbors(position: BoardPosition, board: (Tile | null)[][]): number {
+  const { row, col } = position;
+  const isEvenRow = row % 2 === 0;
+  const neighborOffsets = isEvenRow 
+    ? [[0, -1], [0, 1], [-1, -1], [-1, 0], [1, -1], [1, 0]]
+    : [[0, -1], [0, 1], [-1, 0], [-1, 1], [1, 0], [1, 1]];
+  
+  let emptyCount = 0;
+  for (const [rowOffset, colOffset] of neighborOffsets) {
+    const neighborRow = row + rowOffset;
+    const neighborCol = col + colOffset;
+    
+    if (neighborRow >= 0 && neighborRow < board.length &&
+        neighborCol >= 0 && neighborCol < board[neighborRow]?.length) {
+      const neighbor = board[neighborRow][neighborCol];
+      if (!neighbor) {
+        emptyCount++;
+      }
+    }
+  }
+  
+  return emptyCount;
+}
+
+export function getEmptyNeighborPositions(position: BoardPosition, board: (Tile | null)[][]): BoardPosition[] {
+  const { row, col } = position;
+  const isEvenRow = row % 2 === 0;
+  const neighborOffsets = isEvenRow 
+    ? [[0, -1], [0, 1], [-1, -1], [-1, 0], [1, -1], [1, 0]]
+    : [[0, -1], [0, 1], [-1, 0], [-1, 1], [1, 0], [1, 1]];
+  
+  const emptyPositions: BoardPosition[] = [];
+  for (const [rowOffset, colOffset] of neighborOffsets) {
+    const neighborRow = row + rowOffset;
+    const neighborCol = col + colOffset;
+    
+    if (neighborRow >= 0 && neighborRow < board.length &&
+        neighborCol >= 0 && neighborCol < board[neighborRow]?.length) {
+      const neighbor = board[neighborRow][neighborCol];
+      if (!neighbor) {
+        emptyPositions.push({ row: neighborRow, col: neighborCol });
+      }
+    }
+  }
+  
+  return emptyPositions;
+}
+
 export function upgradeTile(number: number): number {
   const str = number.toString();
   const firstDigit = parseInt(str[0]);
@@ -75,10 +124,11 @@ export class RelictManager {
     board: (Tile | null)[][], 
     isFirstTile: boolean, 
     isFirstTileThisRound: boolean
-  ): { tile: Tile; canPlace: boolean; board: (Tile | null)[][] } {
+  ): { tile: Tile; canPlace: boolean; board: (Tile | null)[][]; effects?: RelictEffect[] } {
     let currentTile = { ...tile };
     let canPlace = true;
     let currentBoard = board.map(row => [...row]);
+    let effects: RelictEffect[] = [];
 
     // Create placement context
     const placementContext: TilePlacementContext = {
@@ -95,6 +145,14 @@ export class RelictManager {
         const result = relict.behavior.onBeforeTilePlacement(placementContext);
         currentTile = result.tile;
         canPlace = canPlace && result.canPlace;
+        
+        // Collect effects
+        if (result.effects) {
+          effects.push(...result.effects.map(effect => ({
+            ...effect,
+            relictId: effect.relictId || relict.id
+          })));
+        }
         
         // Update context for next relict
         placementContext.tile = currentTile;
@@ -114,7 +172,7 @@ export class RelictManager {
       }
     }
 
-    return { tile: currentTile, canPlace, board: currentBoard };
+    return { tile: currentTile, canPlace, board: currentBoard, effects: effects.length > 0 ? effects : undefined };
   }
 
   // Calculate score for a tile through all relicts

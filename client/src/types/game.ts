@@ -6,6 +6,7 @@ export interface Tile {
   id: string;
   number: number;
   color: TileColor;
+  isGhost?: boolean;
 }
 
 export interface BoardPosition {
@@ -32,6 +33,7 @@ export interface GameState {
   relictSelectionOptions: any[];
   animations: AnimationState[];
   isAnimating: boolean;
+  animatingRelicts: string[];
 }
 
 export interface GameStats {

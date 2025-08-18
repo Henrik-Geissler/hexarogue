@@ -61,19 +61,31 @@ export function Tile({
         >
           <path
             d={getHexPath(size)}
-            fill={colors.fill}
-            stroke={colors.stroke}
+            fill={tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill}
+            stroke={tile.isGhost ? '#666' : colors.stroke}
             strokeWidth="2"
             className={cn(
               "transition-all duration-200",
-              isSelected && "stroke-white stroke-4"
+              isSelected && "stroke-white stroke-4",
+              tile.isGhost && "opacity-70"
             )}
           />
+          {tile.isGhost && (
+            <path
+              d={getHexPath(size * 0.8)}
+              fill="none"
+              stroke="#fff"
+              strokeWidth="1"
+              strokeDasharray="2,2"
+              className="opacity-50"
+            />
+          )}
         </svg>
         <div 
           className={cn(
             "absolute inset-0 flex items-center justify-center font-bold text-lg",
-            colors.text === 'white' ? 'text-white' : 'text-black'
+            colors.text === 'white' ? 'text-white' : 'text-black',
+            tile.isGhost && "opacity-80"
           )}
         >
           {tile.number}
@@ -97,11 +109,12 @@ export function Tile({
         !isPlayable && "opacity-70 cursor-not-allowed border-dashed",
         isSelected && "ring-2 ring-white ring-offset-2",
         "hover:scale-105 active:scale-95",
+        tile.isGhost && "opacity-70",
         className
       )}
       style={{
-        backgroundColor: colors.fill,
-        borderColor: colors.stroke,
+        backgroundColor: tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill,
+        borderColor: tile.isGhost ? '#666' : colors.stroke,
         color: colors.text
       }}
     >

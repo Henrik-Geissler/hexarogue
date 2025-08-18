@@ -2,7 +2,12 @@ export type AnimationType =
   | 'placing-starts'
   | 'relict-trigger'
   | 'score-popup'
-  | 'placing-done';
+  | 'placing-done'
+  | 'doubling'
+  | 'vanishing'
+  | 'upgrading'
+  | 'multiplying'
+  | 'ghost-spawn';
 
 export interface AnimationState {
   id: string;
@@ -10,6 +15,7 @@ export interface AnimationState {
   position: { row: number; col: number };
   relictId?: string;
   scoreValue?: number;
+  multiplier?: number;
   duration: number;
   startTime: number;
   isActive: boolean;

@@ -9,7 +9,8 @@ export function useAnimations() {
     position: { row: number; col: number },
     duration: number = 1000,
     relictId?: string,
-    scoreValue?: number
+    scoreValue?: number,
+    multiplier?: number
   ) => {
     const id = `${type}-${position.row}-${position.col}-${Date.now()}`;
     const newAnimation: AnimationState = {
@@ -18,6 +19,7 @@ export function useAnimations() {
       position,
       relictId,
       scoreValue,
+      multiplier,
       duration,
       startTime: Date.now(),
       isActive: true

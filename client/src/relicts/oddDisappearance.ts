@@ -1,18 +1,21 @@
-import { Relict, RelictBehavior, RoundEndContext, Tile } from '../types/relicts';
+import { Relict, RelictBehavior, TilePlacementContext, TilePlacementResult, RelictEffectType } from '../types/relicts';
 
 export const oddDisappearanceBehavior: RelictBehavior = {
-  onRoundEnd: (context: RoundEndContext) => {
-    const vanishedTiles: Tile[] = [];
-    const newBoard = context.board.map(row =>
-      row.map(tile => {
-        if (tile && tile.number % 2 === 1) {
-          vanishedTiles.push(tile);
-          return null;
-        }
-        return tile;
-      })
-    );
-    return { board: newBoard, vanishedTiles };
+  onBeforeTilePlacement: (context: TilePlacementContext): TilePlacementResult => {
+    const effects = [];
+    if (context.tile.number % 2 === 1) {
+      effects.push({
+        type: 'vanishing' as RelictEffectType,
+        relictId: 'odd-tiles-vanish',
+        position: context.position
+      });
+    }
+    
+    return {
+      tile: context.tile,
+      canPlace: true,
+      effects
+    };
   },
 };
 
@@ -20,8 +23,7 @@ export const oddDisappearanceRelict: Relict = {
   id: 'odd-tiles-vanish',
   name: 'Odd Disappearance',
   icon: '👻',
-  description: 'Odd tiles will be removed from the board after scoring (return next round)',
-  type: 'odd-tiles-vanish',
+  description: '**Odd** tiles **disappear** after placement and return to the deck next round',
   behavior: oddDisappearanceBehavior,
 };
 

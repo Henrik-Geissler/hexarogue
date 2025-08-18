@@ -9,6 +9,9 @@ import { oddDisappearanceRelict } from './oddDisappearance';
 import { yellowFreedomRelict } from './yellowFreedom';
 import { edgeChaosRelict } from './edgeChaos';
 import { blueCascadeRelict } from './blueCascade';
+import { emptyNeighborsRelict } from './emptyNeighbors';
+import { ghostSpawnRelict } from './ghostSpawn';
+import { colorVarietyRelict } from './colorVariety';
 
 export const ALL_RELICTS: Relict[] = [
   boardUpgradeRelict,
@@ -21,6 +24,9 @@ export const ALL_RELICTS: Relict[] = [
   yellowFreedomRelict,
   edgeChaosRelict,
   blueCascadeRelict,
+  emptyNeighborsRelict,
+  ghostSpawnRelict,
+  colorVarietyRelict,
 ];
 
 export function createInitialRelictPool(): Relict[] {
