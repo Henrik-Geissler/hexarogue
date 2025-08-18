@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { Tile } from '../../types/game';
 import { AnimationState } from '../../types/animations';
+import { Tile as TileComponent } from './Tile';
 
 interface AnimatedTileProps {
   tile: Tile;
@@ -65,31 +66,19 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
     }
   }, [positionAnimations, tile.number]);
 
-  const getColorClass = (color: string) => {
-    switch (color) {
-      case 'red': return 'bg-red-500';
-      case 'green': return 'bg-green-500';
-      case 'blue': return 'bg-blue-500';
-      case 'yellow': return 'bg-yellow-500';
-      default: return 'bg-gray-500';
-    }
-  };
-
   return (
     <div className={`relative ${className}`}>
-      <div className={`
-        w-12 h-12 rounded-lg flex items-center justify-center text-white font-bold text-lg
-        ${getColorClass(tile.color)}
-        ${isPlacing ? 'animate-bounce' : ''}
-        transition-all duration-300
-      `}>
-        {tile.number}
-      </div>
+      <TileComponent
+        tile={tile}
+        isHexagonal={true}
+        size={30}
+        className={`${isPlacing ? 'animate-bounce' : ''} transition-all duration-300`}
+      />
       
       {effectText && (
         <div className={`
           absolute inset-0 flex items-center justify-center
-          text-2xl font-bold animate-pulse
+          text-2xl font-bold animate-pulse pointer-events-none
           ${effectColor}
         `}>
           {effectText}

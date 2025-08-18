@@ -83,6 +83,8 @@ export function PlayerHand({
             <Tile
               key={tile.id}
               tile={tile}
+              isHexagonal={true}
+              size={25}
               isPlayable={isPlayable}
               isSelected={isSelected}
               onClick={() => handleTileClick(tile)}
