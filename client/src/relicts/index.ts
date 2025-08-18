@@ -1,8 +1,5 @@
 import { Relict } from '../types/relicts';
-import { boardUpgradeRelict } from './boardUpgrade';
-import { firstStrikeRelict } from './firstStrike';
 import { alchemyRelict } from './alchemy';
-import { twinPowerRelict } from './twinPower';
 import { smallWondersRelict } from './smallWonders';
 import { evenLuckRelict } from './evenLuck';
 import { oddDisappearanceRelict } from './oddDisappearance';
@@ -25,12 +22,14 @@ import { areaUpgradeRelict } from './areaUpgrade';
 import { digitReplaceRelict } from './digitReplace';
 import { blueTriggerRelict } from './blueTrigger';
 import { greenUpgradeRelict } from './greenUpgrade';
+import { yellowGoldRelict } from './yellowGold';
+import { discardGoldRelict } from './discardGold';
+import { goldMultiplierRelict } from './goldMultiplier';
+import { lowGoldUpgradeRelict } from './lowGoldUpgrade';
+import { sellUpgradeRelict } from './sellUpgrade';
 
 export const ALL_RELICTS: Relict[] = [
-  boardUpgradeRelict,
-  firstStrikeRelict,
   alchemyRelict,
-  twinPowerRelict,
   smallWondersRelict,
   evenLuckRelict,
   oddDisappearanceRelict,
@@ -53,10 +52,44 @@ export const ALL_RELICTS: Relict[] = [
   digitReplaceRelict,
   blueTriggerRelict,
   greenUpgradeRelict,
+  yellowGoldRelict,
+  discardGoldRelict,
+  goldMultiplierRelict,
+  lowGoldUpgradeRelict,
+  sellUpgradeRelict,
 ];
 
 export function createInitialRelictPool(): Relict[] {
-  return [...ALL_RELICTS];
+  return [
+    alchemyRelict,
+    smallWondersRelict,
+    evenLuckRelict,
+    oddDisappearanceRelict,
+    yellowFreedomRelict,
+    edgeChaosRelict,
+    blueCascadeRelict,
+    emptyNeighborsRelict,
+    ghostSpawnRelict,
+    colorVarietyRelict,
+    discardUpgradeRelict,
+    tileCopyRelict,
+    thirteenthTileRelict,
+    greenPrefixRelict,
+    boardIncrementRelict,
+    blueStackRelict,
+    autoDiscardRelict,
+    upgradeFieldRelict,
+    areaColorChangeRelict,
+    areaUpgradeRelict,
+    digitReplaceRelict,
+    blueTriggerRelict,
+    greenUpgradeRelict,
+    yellowGoldRelict,
+    discardGoldRelict,
+    goldMultiplierRelict,
+    lowGoldUpgradeRelict,
+    sellUpgradeRelict,
+  ];
 }
 
 export function getRelictSelection(availableRelicts: Relict[]): Relict[] {

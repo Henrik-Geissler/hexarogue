@@ -24,6 +24,7 @@ export interface TilePlacementContext {
   tile: Tile;
   position: BoardPosition;
   board: (Tile | null)[][];
+  playerHand: Tile[]; // Add player hand for relicts that need to check hand state
   isFirstTile: boolean;
   isFirstTileThisRound: boolean;
 }
@@ -68,6 +69,13 @@ export interface RelictBehavior {
   onEveryOtherTurn?: (board: (Tile | null)[][]) => (Tile | null)[][];
   onAreaFormed?: (context: AreaContext) => (Tile | null)[][]; // New area-based behavior
   onTileNumberChanged?: (tile: Tile) => Tile; // New method for when tile numbers change
+  
+  // New gold-related methods
+  onDiscardYellowTile?: (tile: Tile) => number; // Return gold amount to add
+  onRoundEndGold?: (discards: number) => number; // Return gold amount to add for remaining discards
+  onScoringGold?: (score: number, gold: number) => number; // Return modified score based on gold
+  onLowGoldUpgrade?: (tile: Tile, gold: number) => Tile; // Upgrade tile if gold is low
+  onSellRelict?: (hand: Tile[]) => Tile[]; // Upgrade hand when another relict is sold
 }
 
 export interface Relict {

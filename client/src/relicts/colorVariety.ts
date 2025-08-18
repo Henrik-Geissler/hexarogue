@@ -4,9 +4,18 @@ export const colorVarietyBehavior: RelictBehavior = {
   onBeforeTilePlacement: (context: TilePlacementContext): TilePlacementResult => {
     const effects: RelictEffect[] = [];
     
-    // This relict will be handled in the game logic where we have access to the player hand
-    // For now, we'll always add the effect and let the game logic determine if it should trigger
-    // The actual check will be done in the game state where we have access to the player hand
+    // Check if player has 4 different colors in hand
+    const colorsInHand = new Set(context.playerHand.map(tile => tile.color));
+    const hasColorVariety = colorsInHand.size >= 4;
+    
+    if (hasColorVariety) {
+      // Add scoring-twice effect when 4 different colors are in hand
+      effects.push({
+        type: 'scoring-twice',
+        relictId: 'color-variety-double',
+        multiplier: 2
+      });
+    }
     
     return {
       tile: context.tile,

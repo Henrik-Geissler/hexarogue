@@ -122,6 +122,7 @@ export class RelictManager {
     tile: Tile, 
     position: BoardPosition, 
     board: (Tile | null)[][], 
+    playerHand: Tile[],
     isFirstTile: boolean, 
     isFirstTileThisRound: boolean
   ): { tile: Tile; canPlace: boolean; board: (Tile | null)[][]; effects?: RelictEffect[] } {
@@ -135,6 +136,7 @@ export class RelictManager {
       tile: currentTile,
       position,
       board: currentBoard,
+      playerHand,
       isFirstTile,
       isFirstTileThisRound
     };
@@ -387,5 +389,18 @@ export class RelictManager {
     }
 
     return processedTile;
+  }
+
+  // Process sell relict effects
+  processSellRelict(hand: Tile[]): Tile[] {
+    let processedHand = [...hand];
+
+    for (const relict of this.ownedRelicts) {
+      if (relict.behavior.onSellRelict) {
+        processedHand = relict.behavior.onSellRelict(processedHand);
+      }
+    }
+
+    return processedHand;
   }
 }

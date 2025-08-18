@@ -30,6 +30,16 @@ function App() {
     actions.setHoveredPosition(null);
   };
 
+  const handleGoldDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const relictId = e.dataTransfer.getData('text/plain');
+    if (relictId && relictId.startsWith('relict-')) {
+      const actualRelictId = relictId.replace('relict-', '');
+      // Sell the relict for gold
+      actions.sellRelict(actualRelictId);
+    }
+  };
+
   if (gameState.gamePhase === 'relict-selection') {
     return (
       <TooltipProvider>
@@ -45,6 +55,8 @@ function App() {
                     targetScore: gameState.targetScore
                   }}
                   round={gameState.round}
+                  gold={gameState.gold}
+                  onGoldDrop={handleGoldDrop}
                 />
                 <Deck deck={gameState.deck} />
               </div>
@@ -132,6 +144,8 @@ function App() {
                 targetScore: gameState.targetScore
               }}
               round={gameState.round}
+              gold={gameState.gold}
+              onGoldDrop={handleGoldDrop}
             />
             <Deck deck={gameState.deck} />
           </div>

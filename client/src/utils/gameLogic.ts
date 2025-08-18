@@ -161,9 +161,12 @@ export function calculateBoardScore(board: (Tile | null)[][], ownedRelicts: any[
 }
 
 // Initialize a new round  
-export function initializeNewRound(currentRound: number, allTiles: Tile[]): Partial<GameState> {
+export function initializeNewRound(currentRound: number, allTiles: Tile[], currentGold: number = 0): Partial<GameState> {
   const shuffledDeck = shuffleDeck(allTiles);
-  const playerHand = shuffledDeck.splice(0, 7);
+  
+  // Only draw initial hand for the first round
+  // For subsequent rounds, hand will be drawn after relict selection
+  const playerHand = currentRound === 1 ? shuffledDeck.splice(0, 7) : [];
   
   return {
     deck: shuffledDeck,
@@ -174,7 +177,8 @@ export function initializeNewRound(currentRound: number, allTiles: Tile[]): Part
     score: 0,
     targetScore: 30 + currentRound * (currentRound+5),
     gamePhase: 'playing',
-    turnCount: 0 // Reset turn counter for new round
+    turnCount: 0, // Reset turn counter for new round
+    gold: currentGold // Keep the current gold amount
   };
 }
 

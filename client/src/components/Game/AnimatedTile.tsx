@@ -213,6 +213,14 @@ export function AnimatedTile({ tile, position, animations, className = '' }: Ani
           setEffectText('');
         }, 700);
         break;
+
+      case 'gold-earned':
+        setEffectText('💰');
+        setEffectColor('text-yellow-400');
+        setTimeout(() => {
+          setEffectText('');
+        }, 1000);
+        break;
     }
   }, [positionAnimations, tile.number]);
 

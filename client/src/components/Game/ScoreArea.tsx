@@ -5,9 +5,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '../ui/card';
 interface ScoreAreaProps {
   stats: GameStats;
   round: number;
+  gold: number;
+  onGoldDrop?: (e: React.DragEvent) => void;
 }
 
-export function ScoreArea({ stats, round }: ScoreAreaProps) {
+export function ScoreArea({ stats, round, gold, onGoldDrop }: ScoreAreaProps) {
   const progressPercentage = (stats.score / stats.targetScore) * 100;
 
   return (
@@ -16,9 +18,20 @@ export function ScoreArea({ stats, round }: ScoreAreaProps) {
         <CardTitle className="text-center text-xl">Round {round} Stats</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="text-center">
-          <div className="text-2xl font-bold text-blue-400">{stats.discards}</div>
-          <div className="text-sm text-gray-300">Discards Left</div>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="text-center">
+            <div className="text-2xl font-bold text-blue-400">{stats.discards}</div>
+            <div className="text-sm text-gray-300">Discards Left</div>
+          </div>
+          
+          <div 
+            className="text-center cursor-pointer transition-all duration-200 hover:scale-105"
+            onDrop={onGoldDrop}
+            onDragOver={(e) => e.preventDefault()}
+          >
+            <div className="text-2xl font-bold text-yellow-400">💰 {gold}</div>
+            <div className="text-sm text-gray-300">Gold</div>
+          </div>
         </div>
         
         <div className="space-y-2">

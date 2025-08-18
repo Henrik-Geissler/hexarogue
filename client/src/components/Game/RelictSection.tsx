@@ -29,6 +29,10 @@ function BoldText({ text }: { text: string }) {
 export function RelictSection({ relicts, onReorderRelicts, animatingRelicts = [], board }: RelictSectionProps) {
   const handleDragStart = (e: React.DragEvent, index: number) => {
     e.dataTransfer.setData('text/plain', index.toString());
+    // Also set the relict ID for selling
+    if (relicts[index]) {
+      e.dataTransfer.setData('text/plain', `relict-${relicts[index].id}`);
+    }
   };
 
   const handleDragOver = (e: React.DragEvent) => {

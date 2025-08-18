@@ -43,6 +43,7 @@ export interface GameState {
     delay: number;
   }>;
   turnCount: number; // Add turn counter
+  gold: number; // Add gold currency
 }
 
 export interface GameStats {

@@ -34,18 +34,15 @@ export function useGameState() {
 		isAnimating: false,
 		animatingRelicts: [],
 		drawingAnimations: [],
-		turnCount: 0 // Add turn counter for upgrade field spawning
+		turnCount: 0, // Add turn counter for upgrade field spawning
+		gold: 0 // Initialize gold to 0
 	}));
-
-	// Create relict manager instance
-	const relictManager = new RelictManager(gameState.ownedRelicts);
 
 	// Start a new game
 	const startNewGame = useCallback(() => {
-		const allTiles = createInitialDeck();
-		const newRoundState = initializeNewRound(1, allTiles);
-		
 		setGameState(prev => {
+			const allTiles = createInitialDeck();
+			const newRoundState = initializeNewRound(1, allTiles, prev.gold);
 			const relictManager = new RelictManager(prev.ownedRelicts);
 			
 			// Process initial drawn tiles through relict effects
@@ -79,7 +76,7 @@ export function useGameState() {
 				...vanishedTiles
 			];
 			
-			const newRoundState = initializeNewRound(prev.round + 1, allTiles);
+			const newRoundState = initializeNewRound(prev.round + 1, allTiles, prev.gold);
 			
 			// Check if we should show relict selection
 			const relictOptions = getRelictSelection(prev.availableRelicts);
@@ -93,10 +90,21 @@ export function useGameState() {
 					relictSelectionOptions: relictOptions
 				};
 			} else {
+				// No relicts available, draw initial hand immediately
+				const relictManager = new RelictManager(prev.ownedRelicts);
+				const cardsToDraw = Math.min(7, newRoundState.deck!.length);
+				const drawnCards = newRoundState.deck!.slice(0, cardsToDraw);
+				const newDeck = newRoundState.deck!.slice(cardsToDraw);
+				
+				// Process drawn cards through relict effects
+				const processedDrawnCards = drawnCards.map(tile => relictManager.processDrawTile(tile));
+				
 				return {
 					...prev,
 					...newRoundState,
-					round: prev.round + 1
+					round: prev.round + 1,
+					playerHand: processedDrawnCards,
+					deck: newDeck
 				};
 			}
 		});
@@ -168,15 +176,12 @@ export function useGameState() {
 		setGameState(prev => {
 			const relictManager = new RelictManager(prev.ownedRelicts);
 			
-			// Check for Color Variety relict (4 different colors in hand)
-			const colorsInHand = new Set(prev.playerHand.map(tile => tile.color));
-			const hasColorVariety = colorsInHand.size >= 4;
-			
 			// Process tile placement through relict manager
 			const { tile: initialProcessedTile, canPlace, board: newBoard, effects } = relictManager.processTilePlacement(
 				tile, 
 				position, 
 				prev.board, 
+				prev.playerHand,
 				isFirstTile, 
 				isFirstTileThisRound
 			);
@@ -198,14 +203,18 @@ export function useGameState() {
 				addAnimation('digit-replace', position, 600);
 				triggerRelictAnimation('digit-replace', 600);
 			}
-
-			// Add Color Variety doubling effect if applicable (only if player owns the relict)
-			const hasColorVarietyRelict = prev.ownedRelicts.some(relict => relict.id === 'color-variety-double');
-			if (hasColorVarietyRelict && hasColorVariety) {
-				doublingCount++;
-				addAnimation('doubling', position, 800);
-				triggerRelictAnimation('color-variety-double', 800);
-			}
+			
+			// Apply low gold upgrade effects
+			prev.ownedRelicts.forEach(relict => {
+				if (relict.behavior.onLowGoldUpgrade) {
+					const upgradedTile = relict.behavior.onLowGoldUpgrade(processedTile, prev.gold);
+					if (upgradedTile.number !== processedTile.number) {
+						processedTile = upgradedTile;
+						addAnimation('upgrading', position, 600);
+						triggerRelictAnimation('low-gold-upgrade', 600);
+					}
+				}
+			});
 
 			// Process effects and add animations
 			if (effects) {
@@ -298,7 +307,15 @@ export function useGameState() {
 			}
 
 			// Calculate base score for the tile
-			const scoreValue = relictManager.calculateTileScore(processedTile, position, newBoard);
+			let scoreValue = relictManager.calculateTileScore(processedTile, position, newBoard);
+			
+			// Apply gold multiplier effects
+			prev.ownedRelicts.forEach(relict => {
+				if (relict.behavior.onScoringGold) {
+					scoreValue = relict.behavior.onScoringGold(scoreValue, prev.gold);
+				}
+			});
+			
 			const totalScoreValue = scoreValue * Math.pow(2, doublingCount) * scoringCount;
 			
 			// Show scoring animation for each scoring event
@@ -506,6 +523,22 @@ export function useGameState() {
 				const currentRelictManager = new RelictManager(prev.ownedRelicts);
 				const { board: boardAfterEffects, vanishedTiles } = currentRelictManager.processRoundEnd(prev.board, prev.round);
 				
+				// Calculate gold earnings
+				let goldEarned = 50; // Base gold for completing round
+				
+				// Count free spots on the board
+				const freeSpots = boardAfterEffects.flat().filter(tile => tile === null).length;
+				goldEarned += freeSpots; // 1 gold per free spot
+				
+				// Process relict effects for round end gold
+				prev.ownedRelicts.forEach(relict => {
+					if (relict.behavior.onRoundEndGold) {
+						goldEarned += relict.behavior.onRoundEndGold(prev.discards);
+					}
+				});
+				
+				const newGold = prev.gold + goldEarned;
+				
 				// Collect all tiles for new round (including vanished tiles)
 				const allTiles = [
 					...prev.deck,
@@ -516,7 +549,7 @@ export function useGameState() {
 				];
 				
 				// Initialize new round state
-				const newRoundState = initializeNewRound(prev.round + 1, allTiles);
+				const newRoundState = initializeNewRound(prev.round + 1, allTiles, newGold);
 				
 				// Check if we should show relict selection
 				const relictOptions = getRelictSelection(prev.availableRelicts);
@@ -556,6 +589,23 @@ export function useGameState() {
 			
 			// Process discard tiles through relict effects
 			const processedTiles = relictManager.processDiscardTiles(tilesToDiscard);
+			
+			// Calculate gold from yellow tiles
+			let goldEarned = 0;
+			tilesToDiscard.forEach(tile => {
+				if (tile.color === 'yellow') {
+					prev.ownedRelicts.forEach(relict => {
+						if (relict.behavior.onDiscardYellowTile) {
+							goldEarned += relict.behavior.onDiscardYellowTile(tile);
+						}
+					});
+				}
+			});
+			
+			// Show gold earned animation if any gold was earned
+			if (goldEarned > 0) {
+				addAnimation('gold-earned', { row: 0, col: 0 }, 1000);
+			}
 			
 			const newHand = prev.playerHand.filter(tile => 
 				!tilesToDiscard.some(discardTile => discardTile.id === tile.id)
@@ -605,7 +655,8 @@ export function useGameState() {
 				playerHand: [...newHand, ...processedDrawnCards],
 				discardPile: newDiscardPile,
 				deck: newDeck,
-				discards: prev.discards - 1
+				discards: prev.discards - 1,
+				gold: prev.gold + goldEarned
 			};
 		});
 		
@@ -647,13 +698,57 @@ export function useGameState() {
 
 	// Select relict during selection phase
 	const selectRelict = useCallback((relict: any) => {
-		setGameState(prev => ({
-			...prev,
-			ownedRelicts: [...prev.ownedRelicts, relict],
-			availableRelicts: prev.availableRelicts.filter(r => r.id !== relict.id),
-			relictSelectionOptions: [],
-			gamePhase: 'playing'
-		}));
+		setGameState(prev => {
+			const relictManager = new RelictManager([...prev.ownedRelicts, relict]);
+			
+			// Draw initial hand after relict selection (except for first round)
+			let newHand = prev.playerHand;
+			let newDeck = prev.deck;
+			
+			if (prev.round > 1) {
+				// Draw 7 cards for the initial hand
+				const cardsToDraw = Math.min(7, prev.deck.length);
+				const drawnCards = prev.deck.slice(0, cardsToDraw);
+				newDeck = prev.deck.slice(cardsToDraw);
+				
+				// Process drawn cards through relict effects
+				const processedDrawnCards = drawnCards.map(tile => relictManager.processDrawTile(tile));
+				newHand = processedDrawnCards;
+			}
+			
+			return {
+				...prev,
+				ownedRelicts: [...prev.ownedRelicts, relict],
+				availableRelicts: prev.availableRelicts.filter(r => r.id !== relict.id),
+				relictSelectionOptions: [],
+				playerHand: newHand,
+				deck: newDeck,
+				gamePhase: 'playing'
+			};
+		});
+	}, []);
+
+	// Sell a relict for gold
+	const sellRelict = useCallback((relictId: string) => {
+		setGameState(prev => {
+			const relictToSell = prev.ownedRelicts.find(r => r.id === relictId);
+			if (!relictToSell) return prev;
+			
+			// Remove the relict and add gold
+			const newRelicts = prev.ownedRelicts.filter(r => r.id !== relictId);
+			const newGold = prev.gold + 25; // Sell for 25 gold
+			
+			// Process sell relict effects on remaining relicts
+			const relictManager = new RelictManager(newRelicts);
+			const newHand = relictManager.processSellRelict(prev.playerHand);
+			
+			return {
+				...prev,
+				ownedRelicts: newRelicts,
+				gold: newGold,
+				playerHand: newHand
+			};
+		});
 	}, []);
 
 	return {
@@ -666,7 +761,8 @@ export function useGameState() {
 			setDraggedTile,
 			setHoveredPosition,
 			reorderRelicts,
-			selectRelict
+			selectRelict,
+			sellRelict
 		}
 	};
 }

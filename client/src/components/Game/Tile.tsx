@@ -62,7 +62,7 @@ export function Tile({
           isDragging && "opacity-50 scale-95",
           !isPlayable && "opacity-70 cursor-not-allowed border-dashed",
           "hover:scale-105 active:scale-95",
-          tile.isUpgradeField && "animate-pulse",
+          tile.isUpgradeField && "animate-slow-pulse",
           className
         )}
         style={{ width: size * 2, height: size * 2 }}
@@ -75,8 +75,8 @@ export function Tile({
         >
           <path
             d={getHexPath(size)}
-            fill={tile.isUpgradeField ? '#8b5cf6' : (tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill)}
-            stroke={tile.isUpgradeField ? '#7c3aed' : (tile.isGhost ? '#666' : colors.stroke)}
+            fill={tile.isUpgradeField ? '#f3f4f6' : (tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill)}
+            stroke={tile.isUpgradeField ? '#d1d5db' : (tile.isGhost ? '#666' : colors.stroke)}
             strokeWidth="2"
             className={cn(
               "transition-all duration-200",
@@ -98,7 +98,7 @@ export function Tile({
         <div 
           className={cn(
             "absolute inset-0 flex items-center justify-center font-bold text-lg",
-            tile.isUpgradeField ? 'text-white' : (colors.text === 'white' ? 'text-white' : 'text-black'),
+            tile.isUpgradeField ? 'text-gray-700' : (colors.text === 'white' ? 'text-white' : 'text-black'),
             tile.isGhost && "opacity-80"
           )}
         >
@@ -117,20 +117,20 @@ export function Tile({
       className={cn(
         "w-12 h-12 rounded-lg border-2 flex items-center justify-center cursor-pointer",
         "font-bold text-lg select-none transition-all duration-200",
-        `bg-[${tile.isUpgradeField ? '#8b5cf6' : colors.fill}] border-[${tile.isUpgradeField ? '#7c3aed' : colors.stroke}]`,
-        tile.isUpgradeField ? 'text-white' : (colors.text === 'white' ? 'text-white' : 'text-black'),
+        `bg-[${tile.isUpgradeField ? '#f3f4f6' : colors.fill}] border-[${tile.isUpgradeField ? '#d1d5db' : colors.stroke}]`,
+        tile.isUpgradeField ? 'text-gray-700' : (colors.text === 'white' ? 'text-white' : 'text-black'),
         isDragging && "opacity-50 scale-95",
         !isPlayable && "opacity-70 cursor-not-allowed border-dashed",
         isSelected && "ring-2 ring-white ring-offset-2",
         "hover:scale-105 active:scale-95",
         tile.isGhost && "opacity-70",
-        tile.isUpgradeField && "animate-pulse",
+        tile.isUpgradeField && "animate-slow-pulse",
         className
       )}
       style={{
-        backgroundColor: tile.isUpgradeField ? '#8b5cf6' : (tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill),
-        borderColor: tile.isUpgradeField ? '#7c3aed' : (tile.isGhost ? '#666' : colors.stroke),
-        color: tile.isUpgradeField ? 'white' : colors.text
+        backgroundColor: tile.isUpgradeField ? '#f3f4f6' : (tile.isGhost ? 'rgba(128, 128, 128, 0.7)' : colors.fill),
+        borderColor: tile.isUpgradeField ? '#d1d5db' : (tile.isGhost ? '#666' : colors.stroke),
+        color: tile.isUpgradeField ? '#374151' : colors.text
       }}
     >
       {tile.isUpgradeField ? '⬆' : tile.number}

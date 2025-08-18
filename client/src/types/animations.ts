@@ -20,7 +20,8 @@ export type AnimationType =
   | 'area-upgrade'
   | 'digit-replace'
   | 'blue-trigger'
-  | 'green-upgrade';
+  | 'green-upgrade'
+  | 'gold-earned';
 
 export interface AnimationState {
   id: string;
