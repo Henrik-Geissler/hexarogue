@@ -16,15 +16,9 @@ export function ScoreArea({ stats, round }: ScoreAreaProps) {
         <CardTitle className="text-center text-xl">Round {round} Stats</CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="text-center">
-            <div className="text-2xl font-bold text-yellow-400">{stats.plays}</div>
-            <div className="text-sm text-gray-300">Plays Left</div>
-          </div>
-          <div className="text-center">
-            <div className="text-2xl font-bold text-blue-400">{stats.discards}</div>
-            <div className="text-sm text-gray-300">Discards Left</div>
-          </div>
+        <div className="text-center">
+          <div className="text-2xl font-bold text-blue-400">{stats.discards}</div>
+          <div className="text-sm text-gray-300">Discards Left</div>
         </div>
         
         <div className="space-y-2">

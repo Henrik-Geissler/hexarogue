@@ -42,25 +42,25 @@ export function GameBoard({
     setTimeout(() => onHoverPosition(null), 50);
   }, [onHoverPosition]);
 
-  // Simple board dimensions for honeycomb
-  const HEX_SIZE = 30;
+  // Responsive hex sizing
+  const HEX_SIZE = Math.min(35, Math.max(25, window.innerWidth / 25));
   const hexWidth = HEX_SIZE * Math.sqrt(3);
   const hexHeight = HEX_SIZE * 1.5;
   const maxCols = 7;
   
-  const boardWidth = maxCols * hexWidth + 100;
-  const boardHeight = board.length * hexHeight + 100;
+  const boardWidth = maxCols * hexWidth + 120;
+  const boardHeight = board.length * hexHeight + 120;
 
   return (
-    <div className="bg-gradient-to-br from-green-800 to-green-900 p-8 rounded-xl shadow-2xl">
-      
+    <div className="bg-gradient-to-br from-green-800 to-green-900 p-8 rounded-xl shadow-2xl w-full max-w-2xl mx-auto">
       <div 
         className="relative mx-auto" 
         style={{ 
           width: `${boardWidth}px`, 
           height: `${boardHeight}px`,
-          minWidth: '450px',
-          minHeight: '350px'
+          minWidth: '400px',
+          minHeight: '300px',
+          maxWidth: '100%'
         }}
       >
         {board.map((row, rowIndex) =>

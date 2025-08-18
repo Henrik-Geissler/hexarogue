@@ -153,10 +153,8 @@ export function initializeNewRound(currentRound: number, allTiles: Tile[]): Part
     playerHand,
     board: createEmptyBoard(),
     discardPile: [],
-    plays: 9,
     discards: 4,
     score: 0,
-    subplays: 0,
     targetScore: 30 + currentRound * (currentRound+5) , // Double each round starting from 10
     gamePhase: 'playing'
   };

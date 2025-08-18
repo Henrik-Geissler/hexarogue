@@ -28,41 +28,15 @@ function App() {
     actions.setHoveredPosition(null);
   };
 
-  if (gameState.gamePhase === 'ready') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-indigo-900 via-purple-900 to-pink-900 flex items-center justify-center p-4">
-        <Card className="w-full max-w-md bg-black/20 backdrop-blur-sm border-white/20 text-white">
-          <CardHeader className="text-center">
-            <CardTitle className="text-3xl font-bold mb-2">Hexagonal Tile Game</CardTitle>
-            <p className="text-gray-300">
-              Match colors or shared digits to place tiles on the hexagonal board.
-              Reach the target score to win!
-            </p>
-          </CardHeader>
-          <CardContent className="text-center">
-            <Button 
-              onClick={actions.startNewGame}
-              size="lg"
-              className="bg-gradient-to-r from-green-500 to-blue-500 hover:from-green-600 hover:to-blue-600"
-            >
-              Start New Game
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   if (gameState.gamePhase === 'relict-selection') {
     return (
       <>
         <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 p-4">
-          <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+          <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-3 gap-8">
             {/* Left Column: Score and Deck */}
-            <div className="space-y-6">
+            <div className="space-y-6 xl:order-1">
               <ScoreArea 
                 stats={{
-                  plays: gameState.plays,
                   discards: gameState.discards,
                   score: gameState.score,
                   targetScore: gameState.targetScore
@@ -73,7 +47,7 @@ function App() {
             </div>
 
             {/* Center Column: Game Board */}
-            <div className="flex items-center justify-center">
+            <div className="flex items-center justify-center xl:order-2">
               <GameBoard
                 board={gameState.board}
                 draggedTile={gameState.draggedTile}
@@ -84,7 +58,7 @@ function App() {
             </div>
 
             {/* Right Column: Relicts and Player Hand */}
-            <div className="space-y-4">
+            <div className="space-y-4 xl:order-3">
               <RelictSection 
                 relicts={gameState.ownedRelicts}
                 onReorderRelicts={actions.reorderRelicts}
@@ -168,12 +142,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-gray-900 to-zinc-900 p-4">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Left Column: Score and Deck */}
-        <div className="space-y-6">
+        <div className="space-y-6 xl:order-1">
           <ScoreArea 
             stats={{
-              plays: gameState.plays,
               discards: gameState.discards,
               score: gameState.score,
               targetScore: gameState.targetScore
@@ -184,7 +157,7 @@ function App() {
         </div>
 
         {/* Center Column: Game Board */}
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center xl:order-2">
           <GameBoard
             board={gameState.board}
             draggedTile={gameState.draggedTile}
@@ -195,7 +168,7 @@ function App() {
         </div>
 
         {/* Right Column: Relicts and Player Hand */}
-        <div className="space-y-4">
+        <div className="space-y-4 xl:order-3">
           <RelictSection 
             relicts={gameState.ownedRelicts}
             onReorderRelicts={actions.reorderRelicts}

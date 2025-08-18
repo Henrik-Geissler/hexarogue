@@ -23,10 +23,8 @@ export function useGameState() {
     playerHand: [],
     board: createEmptyBoard(),
     discardPile: [],
-    plays: 9,
     discards: 4,
     score: 0,
-    subplays: 0,
     targetScore: 10,
     round: 1,
     gamePhase: 'ready',
@@ -96,7 +94,7 @@ export function useGameState() {
   // Place a tile on the board with relict effects
   const placeTile = useCallback((tile: Tile, position: BoardPosition) => {
     const isFirstTile = gameState.board.every(row => row.every(cell => cell === null));
-    const isFirstTileThisRound = gameState.subplays === 0;
+    const isFirstTileThisRound = gameState.board.every(row => row.every(cell => cell === null));
     
     if (!canPlaceTile(tile, position, gameState.board, isFirstTile)) {
       return false;
@@ -105,7 +103,7 @@ export function useGameState() {
     setGameState(prev => {
       let placedTile = { ...tile };
       
-      // Apply first tile double effect
+      // Apply first tile double effect (only for first tile of the round)
       placedTile = applyFirstTileDouble(placedTile, prev.ownedRelicts, isFirstTileThisRound);
       
       // Apply green to red upgrade effect
@@ -115,38 +113,29 @@ export function useGameState() {
       newBoard[position.row][position.col] = placedTile;
       
       let newHand = prev.playerHand.filter(handTile => handTile.id !== tile.id);
-      const newSubplays = prev.subplays + 1;
-      
-      let newPlays = prev.plays;
-      let newScore = prev.score;
       let newDeck = prev.deck;
       
-      // Check if we completed a set of 3 placements
-      if (newSubplays === 3) {
-        newPlays -= 1;
-        newScore = calculateBoardScore(newBoard, prev.ownedRelicts);
-        
-        // Redraw 3 cards after completing a play
-        const cardsToDraw = Math.min(3, newDeck.length);
-        const drawnCards = newDeck.slice(0, cardsToDraw);
-        newDeck = newDeck.slice(cardsToDraw);
-        newHand = [...newHand, ...drawnCards];
-      }
+      // Calculate new score after placement
+      const newScore = calculateBoardScore(newBoard, prev.ownedRelicts);
+      
+      // Draw 1 card after each placement
+      const cardsToDraw = Math.min(1, newDeck.length);
+      const drawnCards = newDeck.slice(0, cardsToDraw);
+      newDeck = newDeck.slice(cardsToDraw);
+      newHand = [...newHand, ...drawnCards];
       
       return {
         ...prev,
         board: newBoard,
         playerHand: newHand,
         deck: newDeck,
-        subplays: newSubplays === 3 ? 0 : newSubplays,
-        plays: newPlays,
         score: newScore,
         draggedTile: null
       };
     });
     
     return true;
-  }, [gameState.board, gameState.playerHand, gameState.subplays, gameState.plays, gameState.ownedRelicts]);
+  }, [gameState.board, gameState.playerHand, gameState.ownedRelicts]);
 
   // Discard selected tiles
   const discardTiles = useCallback((tilesToDiscard: Tile[]) => {
@@ -188,8 +177,6 @@ export function useGameState() {
     setGameState(prev => ({ ...prev, hoveredPosition: position }));
   }, []);
 
-
-
   // Check win/lose conditions after each state change
   useEffect(() => {
     if (gameState.gamePhase !== 'playing') return;
@@ -200,16 +187,15 @@ export function useGameState() {
       return;
     }
 
-    // Check lose conditions
-    const hasPlaysLeft = gameState.plays > 0;
+    // Check lose conditions - only lose if no playable cards and no discards/deck
     const hasDiscards = gameState.discards > 0;
     const hasCardsInDeck = gameState.deck.length > 0;
     const canPlayCards = hasPlayableCards(gameState.playerHand, gameState.board);
 
-    if (!hasPlaysLeft || (!canPlayCards && !hasDiscards && !hasCardsInDeck)) {
+    if (!canPlayCards && !hasDiscards && !hasCardsInDeck) {
       setGameState(prev => ({ ...prev, gamePhase: 'lost' }));
     }
-  }, [gameState.score, gameState.targetScore, gameState.plays, gameState.discards, 
+  }, [gameState.score, gameState.targetScore, gameState.discards, 
       gameState.deck.length, gameState.playerHand, gameState.board, gameState.gamePhase]);
 
   // Reorder relicts

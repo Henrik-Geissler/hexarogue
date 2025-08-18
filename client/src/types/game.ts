@@ -16,10 +16,8 @@ export interface GameState {
   playerHand: Tile[];
   board: (Tile | null)[][];
   discardPile: Tile[];
-  plays: number;
   discards: number;
   score: number;
-  subplays: number;
   targetScore: number;
   round: number;
   gamePhase: 'ready' | 'playing' | 'won' | 'lost' | 'relict-selection';
@@ -32,7 +30,6 @@ export interface GameState {
 }
 
 export interface GameStats {
-  plays: number;
   discards: number;
   score: number;
   targetScore: number;
